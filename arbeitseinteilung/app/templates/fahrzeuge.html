@@ -108,7 +108,7 @@
     <table class="data-table"><thead><tr><th>Kennzeichen</th><th>Baujahr/KS</th><th>Mitarbeiter</th><th>Status</th><th>Kommentar</th><th>Aktionen</th></tr></thead><tbody>
     ${zugeordnet.map(f => `<tr>
         <td style="font-family:var(--font-mono);font-weight:600">${escapeHtml(f.kennzeichen)}</td>
-        <td style="font-family:var(--font-mono)">${f.baujahr || ''}${f.kraftstoff ? '/' + f.kraftstoff : ''}</td>
+        <td style="font-family:var(--font-mono)">${escapeHtml(f.baujahr || '')}${f.kraftstoff ? '/' + escapeHtml(f.kraftstoff) : ''}</td>
         <td>${escapeHtml(f.mitarbeiter_name || '')}</td>
         <td><span class="badge ${statusKlasse[f.status] || ''}">${f.status}</span></td>
         <td style="font-size:12px;color:var(--muted)">${escapeHtml(f.status_kommentar || '')}</td>
@@ -124,7 +124,7 @@
         const statusKlasse = { 'Aktiv': 'status-aktiv', 'Geparkt': 'status-geparkt', 'Werkstatt': 'status-werkstatt', 'Defekt': 'status-defekt' };
         return `<tr>
         <td style="font-family:var(--font-mono);font-weight:600">${escapeHtml(f.kennzeichen)}</td>
-        <td style="font-family:var(--font-mono)">${f.baujahr || ''}${f.kraftstoff ? '/' + f.kraftstoff : ''}</td>
+        <td style="font-family:var(--font-mono)">${escapeHtml(f.baujahr || '')}${f.kraftstoff ? '/' + escapeHtml(f.kraftstoff) : ''}</td>
         <td><span class="badge ${statusKlasse[f.status] || ''}">${f.status}</span></td>
         <td style="font-size:12px;color:var(--muted)">${escapeHtml(f.status_kommentar || '')}</td>
         <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="editFahrzeug(${f.id})">Bearbeiten</button></td>
@@ -165,10 +165,15 @@
         if (!payload.kennzeichen) { alert('Kennzeichen ist erforderlich'); return; }
         const url = id ? `/api/fahrzeuge/${id}` : '/api/fahrzeuge';
         const method = id ? 'PUT' : 'POST';
-        await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        closeFzModal();
-        loadFahrzeuge();
-        showToast('Gespeichert', 'success');
+        try {
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error('API Error');
+            closeFzModal();
+            loadFahrzeuge();
+            showToast('Gespeichert', 'success');
+        } catch (e) {
+            showToast('Fehler beim Speichern', 'error');
+        }
     }
 </script>
 {% endblock %}

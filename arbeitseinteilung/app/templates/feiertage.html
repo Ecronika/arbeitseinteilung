@@ -104,21 +104,31 @@
         const datum = document.getElementById('ftDatum').value;
         const bez = document.getElementById('ftBezeichnung').value.trim();
         if (!datum || !bez) { alert('Datum und Bezeichnung erforderlich'); return; }
-        await fetch('/api/feiertage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ datum, bezeichnung: bez })
-        });
-        closeFtModal();
-        loadFeiertage();
-        showToast('Eintrag hinzugefügt', 'success');
+        try {
+            const res = await fetch('/api/feiertage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datum, bezeichnung: bez })
+            });
+            if (!res.ok) throw new Error('API Error');
+            closeFtModal();
+            loadFeiertage();
+            showToast('Eintrag hinzugefügt', 'success');
+        } catch (e) {
+            showToast('Fehler beim Speichern', 'error');
+        }
     }
 
     async function deleteFeiertag(id) {
         if (!confirm('Eintrag löschen?')) return;
-        await fetch(`/api/feiertage/${id}`, { method: 'DELETE' });
-        loadFeiertage();
-        showToast('Gelöscht', 'success');
+        try {
+            const res = await fetch(`/api/feiertage/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('API Error');
+            loadFeiertage();
+            showToast('Gelöscht', 'success');
+        } catch (e) {
+            showToast('Fehler beim Löschen', 'error');
+        }
     }
 </script>
 {% endblock %}

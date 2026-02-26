@@ -22,6 +22,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Nutzer aus IP laden
     await ladeAktuellenNutzer();
+
+    const uList = document.getElementById('userList');
+    if (uList) {
+        uList.addEventListener('click', e => {
+            const item = e.target.closest('[data-id]');
+            if (item) selectUser(parseInt(item.dataset.id), item.dataset.name);
+        });
+    }
 });
 
 // ─── Nutzeridentifikation ─────────────────────────────────────────────────────
@@ -71,12 +79,6 @@ function renderUserList(query) {
             <div class="item-sub">${escapeHtml(m.gruppe || '')} · ${escapeHtml(m.typ || '')}</div>
         </div>
     `).join('') || '<div class="user-list-item" style="color:#aaa">Keine Treffer</div>';
-
-    // Event Delegation statt onclick-Inline
-    list.onclick = e => {
-        const item = e.target.closest('[data-id]');
-        if (item) selectUser(parseInt(item.dataset.id), item.dataset.name);
-    };
 }
 
 async function selectUser(id, name) {

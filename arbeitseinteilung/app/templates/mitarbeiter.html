@@ -143,9 +143,9 @@
                     ${members.map(m => `
                     <tr>
                         <td><strong>${escapeHtml(m.name)}</strong></td>
-                        <td style="font-family:var(--font-mono)">${m.personalnummer || '–'}</td>
+                        <td style="font-family:var(--font-mono)">${escapeHtml(m.personalnummer || '–')}</td>
                         <td><span class="badge badge-${g.toLowerCase()}">${m.typ}</span></td>
-                        <td style="font-family:var(--font-mono);font-size:12px">${m.kennzeichen ? m.kennzeichen + (m.baujahr ? ' · ' + m.baujahr + '/' + m.kraftstoff : '') : '–'}</td>
+                        <td style="font-family:var(--font-mono);font-size:12px">${m.kennzeichen ? escapeHtml(m.kennzeichen) + (m.baujahr ? ' · ' + escapeHtml(m.baujahr) + '/' + escapeHtml(m.kraftstoff) : '') : '–'}</td>
                         <td>${m.fuehrerschein ? '✓' : '–'}</td>
                         <td style="font-size:12px;color:var(--muted)">
                             ${m.azubi_block ? 'Block ' + escapeHtml(m.azubi_block) : ''}
@@ -222,17 +222,27 @@
         if (!payload.name) { alert('Name ist erforderlich'); return; }
         const url = id ? `/api/mitarbeiter/${id}` : '/api/mitarbeiter';
         const method = id ? 'PUT' : 'POST';
-        await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        closeMaModal();
-        loadMaTabelle();
-        showToast(id ? 'Aktualisiert' : 'Mitarbeiter angelegt', 'success');
+        try {
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error('API Error');
+            closeMaModal();
+            loadMaTabelle();
+            showToast(id ? 'Aktualisiert' : 'Mitarbeiter angelegt', 'success');
+        } catch (e) {
+            showToast('Fehler beim Speichern', 'error');
+        }
     }
 
     async function deaktiviereMitarbeiter(id, name) {
         if (!confirm(`${name} wirklich deaktivieren? Die Person verschwindet aus dem Kalender, Historik bleibt erhalten.`)) return;
-        await fetch(`/api/mitarbeiter/${id}`, { method: 'DELETE' });
-        loadMaTabelle();
-        showToast(`${name} deaktiviert`, 'success');
+        try {
+            const res = await fetch(`/api/mitarbeiter/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('API Error');
+            loadMaTabelle();
+            showToast(`${name} deaktiviert`, 'success');
+        } catch (e) {
+            showToast('Fehler beim Deaktivieren', 'error');
+        }
     }
 </script>
 {% endblock %}

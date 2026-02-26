@@ -345,6 +345,10 @@ function closePopup() {
         socket.emit('cell_unlock', { key: popupKey });
     }
     popupMid = null; popupDatum = null; popupKey = null;
+
+    if (document.activeElement === document.getElementById('popupInput')) {
+        document.body.focus();
+    }
 }
 
 function clearCell() {
