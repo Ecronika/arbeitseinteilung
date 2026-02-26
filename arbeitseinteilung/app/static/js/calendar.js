@@ -42,6 +42,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    const yearDisp = document.getElementById('currentYearDisplay');
+    if (yearDisp) yearDisp.textContent = calYear;
     scrollToToday();
     setupSocketListeners();
     setupDatePicker();
@@ -77,7 +79,7 @@ async function loadFeiertage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         feiertage = {};
-        data.forEach(f => { feiertage[f.datum] = f.bezeichnung; });
+        data.forEach(f => { feiertage[f.datum] = { bezeichnung: f.bezeichnung, halbtag: f.halbtag }; });
     } catch (e) {
         console.error('Feiertage laden fehlgeschlagen', e);
         feiertage = {};
@@ -156,12 +158,19 @@ function renderCalendar() {
         const isWeekend = dow === 0 || dow === 6;
         const isToday = ds === today;
         const isFeiertag = !!feiertage[ds];
+        const feiertagObj = feiertage[ds] || {};
+        const isHalbtag = isFeiertag && feiertagObj.halbtag === 1;
         let cls = 'th-day';
-        if (isWeekend) cls += ' weekend';
+        if (isWeekend) cls += ' weekend col-narrow';
         if (isToday) cls += ' is-today';
         if (isFeiertag) cls += ' feiertag';
-        const title = isFeiertag ? ` title="${escapeHtml(feiertage[ds])}"` : '';
-        dayRow += `<th class="${cls}"${title} data-date="${ds}">${TAGE_KURZ[dow]}<br>${d.getDate()}</th>`;
+        if (isHalbtag) cls += ' half-holiday';
+        const title = isFeiertag ? ` title="${escapeHtml(feiertagObj.bezeichnung)}"` : '';
+
+        const isMonday = dow === 1;
+        const kwTag = isMonday ? `<div style="font-size:9px;color:#999;font-weight:normal;margin-top:-2px">KW${getISOWeek(d)}</div>` : '';
+
+        dayRow += `<th class="${cls}"${title} data-date="${ds}">${TAGE_KURZ[dow]}${kwTag}<br>${d.getDate()}</th>`;
     });
     dayRow += '</tr>';
 
@@ -187,6 +196,11 @@ function renderCalendar() {
         });
     });
 
+    if (!bodyHtml) {
+        bodyHtml = `<tr><td colspan="999" style="padding:40px;text-align:center;color:var(--muted);font-style:italic">
+             👥 Keine Mitarbeiter in der Datenbank gefunden. Bitte legen Sie unter 'Mitarbeiter' welche an.
+             </td></tr>`;
+    }
     body.innerHTML = bodyHtml;
 
     // Event Listener werden jetzt via Delegation im DOMContentLoaded gebunden
@@ -213,6 +227,10 @@ function buildMitarbeiterRow(ma, today) {
     if (ma.azubi_block) nameDisplay += ` <span style="font-size:10px;background:#e3f2fd;color:#1565C0;border-radius:3px;padding:1px 4px">${escapeHtml(ma.azubi_block)}</span>`;
     if (ma.verleihfirma) nameDisplay += ` <span style="font-size:10px;color:#aaa">(${escapeHtml(ma.verleihfirma)})</span>`;
 
+    // Visual Hints (MEDIUM-3)
+    if (ma.typ === 'Azubi') nameDisplay += ' <span style="font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 3px;margin-left:4px">A</span>';
+    if (ma.typ === 'Leiharbeiter') nameDisplay += ' <span style="font-size:10px;color:var(--muted);border:1px solid var(--muted);border-radius:3px;padding:0 3px;margin-left:4px">L</span>';
+
     let row = `<tr data-mid="${ma.id}">
         <td class="sticky-col col-nr">${ma.id}</td>
         <td class="sticky-col col-kfz" title="${escapeHtml(kfzDisplay)}">${escapeHtml(kfzDisplay)}</td>
@@ -228,19 +246,22 @@ function buildMitarbeiterRow(ma, today) {
         const isWeekend = dow === 0 || dow === 6;
         const isToday = ds === today;
         const isFeiertag = !!feiertage[ds];
+        const feiertagObj = feiertage[ds] || {};
+        const isHalbtag = isFeiertag && feiertagObj.halbtag === 1;
 
-        const { bg, text } = getCellStyle(inhalt, isFeiertag, feiertage[ds]);
+        const { bg, text } = getCellStyle(inhalt, isFeiertag, feiertagObj.bezeichnung);
 
         let cls = 'day-col';
-        if (isWeekend) cls += ' weekend';
+        if (isWeekend) cls += ' weekend col-narrow';
         if (isToday) cls += ' is-today';
         if (isFeiertag && !inhalt) cls += ' feiertag';
+        if (isHalbtag) cls += ' half-holiday';
 
-        const displayText = isFeiertag && !inhalt ? escapeHtml(feiertage[ds]) : escapeHtml(inhalt);
+        const displayText = isFeiertag && !inhalt ? escapeHtml(feiertagObj.bezeichnung) : escapeHtml(inhalt);
 
         row += `<td class="${cls}" data-mid="${ma.id}" data-date="${ds}" data-key="${key}" tabindex="0"
                     style="background:${bg};color:${text}"
-                    title="${isFeiertag && !inhalt ? escapeHtml(feiertage[ds]) : escapeHtml(inhalt)}">${displayText}</td>`;
+                    title="${isFeiertag && !inhalt ? escapeHtml(feiertagObj.bezeichnung) : escapeHtml(inhalt)}">${displayText}</td>`;
     });
 
     row += '</tr>';
@@ -295,7 +316,11 @@ function setupDatePicker() {
 
 function onCellClick(e) {
     const td = e.currentTarget;
-    if (td.classList.contains('cell-locked')) return;
+    if (td.classList.contains('cell-locked')) {
+        const lockerName = td.dataset.locker || 'jemand anderem';
+        showToast(`Diese Zelle wird aktuell von ${lockerName} bearbeitet`, 'error');
+        return;
+    }
 
     if (popupKey && popupKey !== td.dataset.key) {
         if (socket) socket.emit('cell_unlock', { key: popupKey });
@@ -319,13 +344,30 @@ function onCellClick(e) {
 
     // Feiertag-Info falls vorhanden
     if (isFeiertag) {
-        document.getElementById('popupInput').placeholder = feiertage[popupDatum] + ' (Feiertag)';
+        document.getElementById('popupInput').placeholder = (feiertage[popupDatum]?.bezeichnung || 'Feiertag') + ' (Feiertag)';
     } else {
         document.getElementById('popupInput').placeholder = 'Baustelle / Einsatzort...';
     }
 
     positionPopup(td);
     document.getElementById('cellPopup').style.display = 'block';
+    // Azubi Kürzel Hint inyectieren
+    let hintDiv = document.getElementById('azubiHint');
+    if (!hintDiv) {
+        hintDiv = document.createElement('div');
+        hintDiv.id = 'azubiHint';
+        const gridNode = document.getElementById('sondertageGrid');
+        gridNode.parentNode.insertBefore(hintDiv, gridNode);
+    }
+    if (ma && ma.typ === 'Azubi') {
+        const bName = ma.betreuer_name || '';
+        const bInitials = bName.split(' ').map(n => n[0]).join('').toUpperCase();
+        const shortcutStr = `${ma.gruppe} ${bInitials}`;
+        hintDiv.innerHTML = `<button type="button" class="sondertag-btn" style="width:100%;margin-bottom:8px;background:#e3f2fd;color:#1565c0" onclick="setSondertag('${shortcutStr}')">Azubi-Kürzel: ${shortcutStr}</button>`;
+    } else {
+        hintDiv.innerHTML = '';
+    }
+
     document.getElementById('popupInput').focus();
 
     // Zelle sperren
@@ -425,13 +467,14 @@ function updateCell(mid, datum, inhalt) {
     if (!td) return;
 
     const isFeiertag = !!feiertage[datum];
-    const { bg, text } = getCellStyle(inhalt, isFeiertag, feiertage[datum]);
+    const feiertagObj = feiertage[datum] || {};
+    const { bg, text } = getCellStyle(inhalt, isFeiertag, feiertagObj.bezeichnung);
     td.style.background = bg;
     td.style.color = text;
 
-    const displayText = isFeiertag && !inhalt ? feiertage[datum] : inhalt;
-    td.textContent = displayText || (isFeiertag ? feiertage[datum] : '');
-    td.title = inhalt || (isFeiertag ? feiertage[datum] : '');
+    const displayText = isFeiertag && !inhalt ? feiertagObj.bezeichnung : inhalt;
+    td.textContent = displayText || (isFeiertag ? feiertagObj.bezeichnung : '');
+    td.title = inhalt || (isFeiertag ? feiertagObj.bezeichnung : '');
 }
 
 // ─── Socket.IO Live-Updates ───────────────────────────────────────────────────
@@ -492,6 +535,33 @@ function buildSondertageGrid() {
 function setSondertag(kuerzel) {
     document.getElementById('popupInput').value = kuerzel;
     saveCell();
+}
+
+async function changeYear(delta) {
+    if (_saving) return;
+    calYear += delta;
+    const yearDisp = document.getElementById('currentYearDisplay');
+    if (yearDisp) yearDisp.textContent = calYear;
+
+    setupDatePicker();
+
+    document.getElementById('calendarBody').innerHTML = '<tr><td colspan="999" style="padding:40px;text-align:center">&#10227; Lade Jahr...</td></tr>';
+
+    buildDayArray();
+    const [, maOk] = await Promise.all([loadFeiertage(), loadMitarbeiter()]);
+    await loadEinsaetze();
+    if (maOk !== false) {
+        renderCalendar();
+        scrollToDate(`${calYear}-01-01`);
+    }
+}
+
+function getISOWeek(d) {
+    const date = new Date(d.getTime());
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
 // ─── Außerhalb klicken schließt Popup ────────────────────────────────────────

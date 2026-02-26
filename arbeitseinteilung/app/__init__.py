@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask
 from flask_socketio import SocketIO
 import os
@@ -6,9 +9,15 @@ socketio = SocketIO()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.environ.get(
-        'SECRET_KEY', 'arbeitseinteilung-secret-2024'
-    )
+
+    if os.environ.get('USE_REVERSE_PROXY', '').lower() == 'true':
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        raise RuntimeError("SECRET_KEY environment variable is missing. It is mandatory for secure operations.")
+    app.config['SECRET_KEY'] = secret_key
     app.config['DATABASE_PATH'] = os.environ.get(
         'DATABASE_PATH',
         os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'arbeitseinteilung.db')
@@ -22,6 +31,7 @@ def create_app():
     app.register_blueprint(bp)
 
     from . import sockets  # noqa: F401
-    socketio.init_app(app, cors_allowed_origins='*', async_mode='eventlet')
+    allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:8090')
+    socketio.init_app(app, cors_allowed_origins=allowed_origins, async_mode='eventlet')
 
     return app

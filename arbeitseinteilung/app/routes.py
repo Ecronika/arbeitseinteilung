@@ -8,8 +8,6 @@ bp = Blueprint('main', __name__)
 
 
 def get_client_ip():
-    if request.headers.get('X-Forwarded-For'):
-        return request.headers['X-Forwarded-For'].split(',')[0].strip()
     return request.remote_addr
 
 
@@ -65,8 +63,12 @@ def mein_nutzer():
 
 @bp.route('/api/ip-nutzer', methods=['POST'])
 def set_ip_nutzer():
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    if 'mitarbeiter_id' not in data:
+        return jsonify({"error": "mitarbeiter_id required"}), 422
     ip = get_client_ip()
-    data = request.json
     db = get_db()
     db.execute(
         """INSERT INTO ip_nutzer (ip_adresse, mitarbeiter_id, zuletzt_gesehen)
@@ -91,7 +93,7 @@ def get_mitarbeiter():
         FROM mitarbeiter m
         LEFT JOIN fahrzeuge f ON f.mitarbeiter_id = m.id AND f.aktiv = 1
         LEFT JOIN mitarbeiter b ON b.id = m.betreuer_id
-        WHERE m.aktiv = 1
+        WHERE m.aktiv = 1 AND (m.einsatz_bis IS NULL OR m.einsatz_bis >= date('now', 'localtime'))
         ORDER BY m.gruppe, m.sort_order, m.name
     """).fetchall()
 
@@ -111,7 +113,11 @@ def get_mitarbeiter():
 
 @bp.route('/api/mitarbeiter', methods=['POST'])
 def create_mitarbeiter():
-    data = request.json
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    if not data.get('name') or not str(data['name']).strip():
+        return jsonify({"error": "name required"}), 422
     db = get_db()
     cur = db.execute("""
         INSERT INTO mitarbeiter
@@ -131,7 +137,11 @@ def create_mitarbeiter():
 
 @bp.route('/api/mitarbeiter/<int:mid>', methods=['PUT'])
 def update_mitarbeiter(mid):
-    data = request.json
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    if not data.get('name') or not str(data['name']).strip():
+        return jsonify({"error": "name required"}), 422
     db = get_db()
     db.execute("""
         UPDATE mitarbeiter SET
@@ -149,6 +159,22 @@ def update_mitarbeiter(mid):
     ))
     db.commit()
     return jsonify({"ok": True})
+
+
+@bp.route('/api/mitarbeiter/reorder', methods=['PUT'])
+def reorder_mitarbeiter():
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    orders = data.get('orders', [])
+    try:
+        db = get_db()
+        for item in orders:
+            db.execute("UPDATE mitarbeiter SET sort_order = ? WHERE id = ?", (item.get('sort_order'), item.get('id')))
+        db.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @bp.route('/api/mitarbeiter/<int:mid>', methods=['DELETE'])
@@ -176,7 +202,11 @@ def get_fahrzeuge():
 
 @bp.route('/api/fahrzeuge', methods=['POST'])
 def create_fahrzeug():
-    data = request.json
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    if not data.get('kennzeichen') or not str(data['kennzeichen']).strip():
+        return jsonify({"error": "kennzeichen required"}), 422
     db = get_db()
     cur = db.execute("""
         INSERT INTO fahrzeuge (kennzeichen, baujahr, kraftstoff, status, status_kommentar, mitarbeiter_id)
@@ -191,7 +221,11 @@ def create_fahrzeug():
 
 @bp.route('/api/fahrzeuge/<int:fid>', methods=['PUT'])
 def update_fahrzeug(fid):
-    data = request.json
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    if not data.get('kennzeichen') or not str(data['kennzeichen']).strip():
+        return jsonify({"error": "kennzeichen required"}), 422
     db = get_db()
     db.execute("""
         UPDATE fahrzeuge SET
@@ -230,7 +264,11 @@ def get_einsaetze():
 
 @bp.route('/api/einsaetze', methods=['POST'])
 def save_einsatz():
-    data = request.json
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    if 'mitarbeiter_id' not in data or 'datum' not in data:
+        return jsonify({"error": "mitarbeiter_id and datum required"}), 422
     ip = get_client_ip()
     db = get_db()
 
@@ -283,7 +321,11 @@ def get_feiertage():
 
 @bp.route('/api/feiertage', methods=['POST'])
 def add_feiertag():
-    data = request.json
+    if not request.is_json:
+        return jsonify({"error": "Content-Type: application/json required"}), 415
+    data = request.json or {}
+    if not data.get('datum') or not data.get('bezeichnung'):
+        return jsonify({"error": "datum and bezeichnung required"}), 422
     db = get_db()
     try:
         db.execute(
@@ -306,7 +348,7 @@ def delete_feiertag(fid):
 
 @bp.route('/api/feiertage/generieren', methods=['POST'])
 def generiere_feiertage():
-    data = request.json
+    data = request.json or {}
     year = data.get('year', date.today().year)
     db = get_db()
     count = 0
@@ -330,6 +372,8 @@ def get_historie():
     limit = request.args.get('limit', 200, type=int)
     mitarbeiter_id = request.args.get('mitarbeiter_id', type=int)
     bearbeiter = request.args.get('bearbeiter')
+    von = request.args.get('von')
+    bis = request.args.get('bis')
     db = get_db()
 
     sql = "SELECT * FROM aenderungshistorie WHERE 1=1"
@@ -340,8 +384,24 @@ def get_historie():
     if bearbeiter:
         sql += " AND bearbeiter_name LIKE ?"
         params.append(f"%{bearbeiter}%")
+    if von:
+        sql += " AND date(zeitstempel) >= ?"
+        params.append(von)
+    if bis:
+        sql += " AND date(zeitstempel) <= ?"
+        params.append(bis)
+        
     sql += " ORDER BY zeitstempel DESC LIMIT ?"
     params.append(limit)
 
     rows = db.execute(sql, params).fetchall()
     return jsonify([dict(r) for r in rows])
+
+
+@bp.route('/api/health')
+def health():
+    try:
+        get_db().execute("SELECT 1").fetchone()
+        return jsonify({"status": "ok", "db": "connected"})
+    except Exception as e:
+        return jsonify({"status": "error", "detail": str(e)}), 500

@@ -102,6 +102,8 @@
             const id = parseInt(btn.dataset.id);
             if (btn.dataset.action === 'edit') editMitarbeiter(id);
             if (btn.dataset.action === 'deactivate') deaktiviereMitarbeiter(id, btn.dataset.name);
+            if (btn.dataset.action === 'move-up') moveMitarbeiter(id, -1);
+            if (btn.dataset.action === 'move-down') moveMitarbeiter(id, 1);
         });
     });
 
@@ -160,7 +162,12 @@
                             ${m.verleihfirma ? escapeHtml(m.verleihfirma) : ''}
                         </td>
                         <td>
-                            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" data-action="edit" data-id="${m.id}">Bearbeiten</button>
+                            <div style="display:flex;gap:4px;flex-direction:column;margin-right:10px;float:left">
+                                <button class="btn btn-ghost" style="padding:0 6px;line-height:1;font-size:14px" data-action="move-up" data-id="${m.id}" title="Nach oben">▲</button>
+                                <button class="btn btn-ghost" style="padding:0 6px;line-height:1;font-size:14px" data-action="move-down" data-id="${m.id}" title="Nach unten">▼</button>
+                            </div>
+                            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;margin-bottom:4px" data-action="edit" data-id="${m.id}">Bearbeiten</button>
+                            <br>
                             <button class="btn btn-danger" style="padding:4px 10px;font-size:12px" data-action="deactivate" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Deaktivieren</button>
                         </td>
                     </tr>`).join('')}
@@ -259,6 +266,44 @@
             showToast(`${name} deaktiviert`, 'success');
         } catch (e) {
             showToast('Fehler beim Deaktivieren', 'error');
+        }
+    }
+
+    async function moveMitarbeiter(id, dir) {
+        const ma = maData.find(m => m.id === id);
+        if (!ma) return;
+        const g = ma.gruppe;
+
+        // build flat array of members in this group sorted by their current order
+        const members = maData.filter(m => m.gruppe === g && m.aktiv === 1)
+            .sort((a, b) => (a.sort_order - b.sort_order) || a.name.localeCompare(b.name));
+
+        const idx = members.findIndex(m => m.id === id);
+        if (idx === -1) return;
+        if (dir === -1 && idx === 0) return; // already at top
+        if (dir === 1 && idx === members.length - 1) return; // already at bottom
+
+        // Swap
+        const current = members[idx];
+        const target = members[idx + dir];
+        members[idx] = target;
+        members[idx + dir] = current;
+
+        // Re-assign sort_orders sequentially for the entire group
+        const orders = members.map((m, i) => ({ id: m.id, sort_order: i }));
+
+        // Optimistic UI wait (skip)
+
+        try {
+            const res = await fetch('/api/mitarbeiter/reorder', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orders })
+            });
+            if (!res.ok) throw new Error('API Error');
+            loadMaTabelle();
+        } catch (e) {
+            showToast('Fehler beim Sortieren', 'error');
         }
     }
 </script>

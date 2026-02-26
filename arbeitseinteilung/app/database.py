@@ -72,7 +72,8 @@ def init_db(app):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 datum DATE NOT NULL UNIQUE,
                 bezeichnung TEXT NOT NULL,
-                automatisch INTEGER DEFAULT 1
+                automatisch INTEGER DEFAULT 1,
+                halbtag INTEGER DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS ip_nutzer (
@@ -95,6 +96,13 @@ def init_db(app):
             );
         """)
 
+        # Migration for existing databases
+        try:
+            db.execute("ALTER TABLE feiertage ADD COLUMN halbtag INTEGER DEFAULT 0")
+            db.execute("UPDATE feiertage SET halbtag=1 WHERE bezeichnung IN ('Heiligabend', 'Silvester')")
+        except sqlite3.OperationalError:
+            pass
+
         # Seed Feiertage if empty
         count = db.execute("SELECT COUNT(*) FROM feiertage").fetchone()[0]
         if count == 0:
@@ -102,10 +110,11 @@ def init_db(app):
             year = date.today().year
             for y in [year, year + 1]:
                 for datum, name in get_hamburg_holidays(y):
+                    halbtag = 1 if name in ['Heiligabend', 'Silvester'] else 0
                     try:
                         db.execute(
-                            "INSERT OR IGNORE INTO feiertage (datum, bezeichnung, automatisch) VALUES (?, ?, 1)",
-                            (datum.isoformat(), name)
+                            "INSERT OR IGNORE INTO feiertage (datum, bezeichnung, automatisch, halbtag) VALUES (?, ?, 1, ?)",
+                            (datum.isoformat(), name, halbtag)
                         )
                     except Exception:
                         pass

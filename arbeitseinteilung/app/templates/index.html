@@ -391,6 +391,14 @@
 <!-- Toolbar -->
 <div class="calendar-toolbar">
     <button class="today-btn" onclick="scrollToToday()">⬤ Heute</button>
+    <div style="display:flex;align-items:center;gap:4px;margin-left:8px;margin-right:8px">
+        <button class="nav-link" onclick="changeYear(-1)"
+            style="border:1px solid var(--border);color:var(--text);padding:4px 8px;cursor:pointer;border-radius:4px">&lt;</button>
+        <span id="currentYearDisplay"
+            style="font-weight:bold;font-size:14px;color:var(--accent);min-width:40px;text-align:center"></span>
+        <button class="nav-link" onclick="changeYear(1)"
+            style="border:1px solid var(--border);color:var(--text);padding:4px 8px;cursor:pointer;border-radius:4px">&gt;</button>
+    </div>
     <div class="date-picker-wrap">
         <label>Zu Datum:</label>
         <input type="date" id="datePicker" onchange="scrollToDate(this.value)">

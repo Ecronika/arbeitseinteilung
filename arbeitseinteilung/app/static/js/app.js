@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch('/api/mitarbeiter');
         const data = await res.json();
         alleMitarbeiter = data.alle || [];
+        document.dispatchEvent(new CustomEvent('app:mitarbeiterLoaded'));
     } catch (e) { console.error('Mitarbeiter laden fehlgeschlagen', e); }
 
     // Nutzer aus IP laden
@@ -47,9 +48,9 @@ async function ladeAktuellenNutzer() {
         const data = await res.json();
         if (data.mitarbeiter_id) {
             setCurrentUser(data.mitarbeiter_id, data.name);
-        } else {
-            openUserSelect();
         }
+        // Immer Modal öffnen für Transparenz
+        openUserSelect();
     } catch (e) { openUserSelect(); }
 }
 
@@ -135,6 +136,11 @@ function escapeHtml(str) {
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+        const loginModal = document.getElementById('userModal');
+        if (loginModal && loginModal.style.display !== 'none' && (!currentUser || !currentUser.id)) {
+            return; // Schließen verhindern, solange kein User gesetzt
+        }
+
         let closed = false;
         const openModals = document.querySelectorAll('.modal-overlay');
         openModals.forEach(m => {

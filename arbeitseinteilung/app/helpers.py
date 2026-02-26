@@ -43,23 +43,25 @@ def get_hamburg_holidays(year):
 
 
 SONDERTAG_FARBEN = {
-    "Urlaub":          {"bg": "#FFF176", "text": "#5D4037"},
-    "Krank":           {"bg": "#EF9A9A", "text": "#B71C1C"},
-    "Schule":          {"bg": "#90CAF9", "text": "#0D47A1"},
-    "Innung":          {"bg": "#FFCC80", "text": "#E65100"},
-    "Überstd.":        {"bg": "#A5D6A7", "text": "#1B5E20"},
-    "KUG":             {"bg": "#CFD8DC", "text": "#37474F"},
-    "P":               {"bg": "#B3E5FC", "text": "#01579B"},
-    "Mutterschutz":    {"bg": "#F8BBD9", "text": "#880E4F"},
-    "Q":               {"bg": "#CE93D8", "text": "#4A148C"},
-    "Feiertag":        {"bg": "#B0BEC5", "text": "#263238"},
-    "Krank wg. Kind":  {"bg": "#FFAB91", "text": "#BF360C"},
-    "MA Gespräch":     {"bg": "#B2DFDB", "text": "#004D40"},
-    "Schulung":        {"bg": "#C8E6C9", "text": "#2E7D32"},
-    "Berufschule":     {"bg": "#90CAF9", "text": "#0D47A1"},
+    "Urlaub":                  {"bg": "#FFF176", "text": "#5D4037"},
+    "Krank":                   {"bg": "#EF9A9A", "text": "#B71C1C"},
+    "Krank wegen Kind":        {"bg": "#EF9A9A", "text": "#B71C1C"},
+    "Schule":                  {"bg": "#92D050", "text": "#1B5E20"},
+    "Innung":                  {"bg": "#00B0F0", "text": "#0D47A1"},
+    "Prüfung Gesel. Teil 1/2": {"bg": "#00B0F0", "text": "#0D47A1"},
+    "Schulung Firma":          {"bg": "#B3E5FC", "text": "#01579B"},
+    "Überstd.":                {"bg": "#7030A0", "text": "#FFFFFF"},
+    "KUG":                     {"bg": "#FAC090", "text": "#4E342E"},
+    "Q":                       {"bg": "#9BBB59", "text": "#1B5E20"},
+    "Mutterschutz":            {"bg": "#FF0066", "text": "#FFFFFF"},
+    "P":                       {"bg": "#00B0F0", "text": "#0D47A1"},
+    "Feiertag":                {"bg": "#B0BEC5", "text": "#263238"},
+    "MA Gespräch":             {"bg": "#B2DFDB", "text": "#004D40"},
+    "Schulung":                {"bg": "#C8E6C9", "text": "#2E7D32"},
+    "Berufschule":             {"bg": "#90CAF9", "text": "#0D47A1"},
 }
 
-GRUPPEN_REIHENFOLGE = ["KD", "ST", "KDF", "MT", "P1", "P2", "Büro"]
+GRUPPEN_REIHENFOLGE = ["KD", "ST", "P1", "P2", "KDF", "MT", "Büro"]
 
 GRUPPEN_FARBEN = {
     "KD":   "#1565C0",

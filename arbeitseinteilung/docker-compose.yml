@@ -12,4 +12,10 @@ services:
     environment:
       - FLASK_ENV=production
       - DATABASE_PATH=/app/data/arbeitseinteilung.db
-      # - SECRET_KEY=<sicherer-zufälliger-wert> # optional überschreiben
+      - SECRET_KEY=ERSETZE_MICH_MIT_ZUFALLSWERT
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8090/api/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

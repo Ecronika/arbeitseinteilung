@@ -40,6 +40,15 @@ docker-compose up -d --build
 
 Die SQLite-Datenbank liegt unter `./data/arbeitseinteilung.db` und wird als Volume eingebunden – bleibt bei Updates erhalten.
 
+## Backup (Empfohlen)
+
+Die Datenbank sollte regelmäßig durch den Docker-Host gesichert werden (kein HTTP-Endpoint aus Sicherheitsgründen). Ein Host-basierter Cronjob mit dem SQLite `.backup` Command ist die sicherste Methode:
+
+```bash
+# Beispiel-Cronjob (täglich um 02:00 Uhr):
+0 2 * * * cd /pfad/zum/projekt && sqlite3 ./data/arbeitseinteilung.db ".backup ./data/backup_$(date +\%F).sqlite"
+```
+
 ## Stack
 
 - **Backend**: Python / Flask + Flask-SocketIO

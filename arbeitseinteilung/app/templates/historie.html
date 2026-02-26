@@ -18,6 +18,14 @@
                 <option value="">– alle –</option>
             </select>
         </div>
+        <div class="form-group" style="min-width:140px">
+            <label class="form-label">Von</label>
+            <input type="date" class="form-input" id="filterVon">
+        </div>
+        <div class="form-group" style="min-width:140px">
+            <label class="form-label">Bis</label>
+            <input type="date" class="form-input" id="filterBis">
+        </div>
         <button class="btn btn-primary" onclick="loadHistorie()">Suchen</button>
     </div>
 
@@ -61,10 +69,14 @@
     async function loadHistorie() {
         const bearbeiter = document.getElementById('filterBearbeiter').value.trim();
         const mid = document.getElementById('filterMitarbeiter').value;
+        const von = document.getElementById('filterVon').value;
+        const bis = document.getElementById('filterBis').value;
 
         let url = '/api/historie?limit=300';
         if (bearbeiter) url += `&bearbeiter=${encodeURIComponent(bearbeiter)}`;
         if (mid) url += `&mitarbeiter_id=${mid}`;
+        if (von) url += `&von=${von}`;
+        if (bis) url += `&bis=${bis}`;
 
         let data;
         try {
