@@ -1,5 +1,5 @@
 from . import socketio
-from flask_socketio import emit, broadcast
+from flask_socketio import emit
 from flask import request
 
 # Tracks which cells are currently being edited: key = "mid_datum" → {sid, name}
