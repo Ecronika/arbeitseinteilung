@@ -15,6 +15,7 @@
         top: 56px;
         z-index: 90;
     }
+
     .today-btn {
         background: var(--accent);
         color: white;
@@ -27,9 +28,23 @@
         cursor: pointer;
         letter-spacing: 0.02em;
     }
-    .today-btn:hover { background: var(--accent-dark); }
-    .date-picker-wrap { display: flex; align-items: center; gap: 8px; }
-    .date-picker-wrap label { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+    .today-btn:hover {
+        background: var(--accent-dark);
+    }
+
+    .date-picker-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .date-picker-wrap label {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 500;
+    }
+
     #datePicker {
         font-family: var(--font-mono);
         font-size: 13px;
@@ -40,6 +55,7 @@
         cursor: pointer;
         color: var(--text);
     }
+
     .legend-wrap {
         display: flex;
         gap: 8px;
@@ -47,6 +63,7 @@
         margin-left: auto;
         align-items: center;
     }
+
     .legend-chip {
         font-size: 11px;
         font-weight: 600;
@@ -62,13 +79,16 @@
         overflow-y: auto;
         height: calc(100vh - 112px);
     }
+
     .calendar-table {
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 12px;
         font-family: var(--font-mono);
     }
-    .calendar-table th, .calendar-table td {
+
+    .calendar-table th,
+    .calendar-table td {
         border: 1px solid var(--border);
         white-space: nowrap;
         overflow: hidden;
@@ -79,29 +99,85 @@
     }
 
     /* Sticky columns */
-    .col-nr    { width: 36px; min-width: 36px; text-align: center; }
-    .col-kfz   { width: 130px; min-width: 130px; }
-    .col-bd    { width: 54px; min-width: 54px; text-align: center; }
-    .col-pnr   { width: 54px; min-width: 54px; text-align: center; }
-    .col-name  { width: 190px; min-width: 190px; }
+    .col-nr {
+        width: 36px;
+        min-width: 36px;
+        text-align: center;
+    }
+
+    .col-kfz {
+        width: 130px;
+        min-width: 130px;
+    }
+
+    .col-bd {
+        width: 54px;
+        min-width: 54px;
+        text-align: center;
+    }
+
+    .col-pnr {
+        width: 54px;
+        min-width: 54px;
+        text-align: center;
+    }
+
+    .col-name {
+        width: 190px;
+        min-width: 190px;
+    }
 
     .sticky-col {
         position: sticky;
         background: var(--surface);
         z-index: 10;
     }
-    .col-nr   { left: 0; }
-    .col-kfz  { left: 36px; }
-    .col-bd   { left: 166px; }
-    .col-pnr  { left: 220px; }
-    .col-name { left: 274px; }
+
+    .col-nr {
+        left: 0;
+    }
+
+    .col-kfz {
+        left: 36px;
+    }
+
+    .col-bd {
+        left: 166px;
+    }
+
+    .col-pnr {
+        left: 220px;
+    }
+
+    .col-name {
+        left: 274px;
+    }
 
     /* Day columns */
-    .day-col { width: 110px; min-width: 110px; cursor: pointer; }
-    .day-col:hover { background: #f0f4ff !important; }
-    .day-col.weekend { background: #f8f8f8 !important; }
-    .day-col.is-today { outline: 2px solid var(--accent) !important; outline-offset: -2px; }
-    .day-col.feiertag { background: #eceff1 !important; color: #546e7a; font-style: italic; }
+    .day-col {
+        width: 110px;
+        min-width: 110px;
+        cursor: pointer;
+    }
+
+    .day-col:hover {
+        background: #f0f4ff !important;
+    }
+
+    .day-col.weekend {
+        background: #f8f8f8 !important;
+    }
+
+    .day-col.is-today {
+        outline: 2px solid var(--accent) !important;
+        outline-offset: -2px;
+    }
+
+    .day-col.feiertag {
+        background: #eceff1 !important;
+        color: #546e7a;
+        font-style: italic;
+    }
 
     /* Header rows */
     .th-month {
@@ -114,19 +190,32 @@
         letter-spacing: 0.05em;
         z-index: 20 !important;
     }
+
     .th-day {
         background: #f5f5f5;
         text-align: center;
         font-size: 11px;
         font-weight: 500;
         color: var(--muted);
-        z-index: 15 !important;
+        z-index: 25 !important;
         position: sticky;
         top: 28px;
     }
-    .th-day.weekend { color: #bbb; }
-    .th-day.is-today { background: var(--accent); color: white; font-weight: 700; }
-    .th-day.feiertag { background: #eceff1; color: #90a4ae; }
+
+    .th-day.weekend {
+        color: #bbb;
+    }
+
+    .th-day.is-today {
+        background: var(--accent);
+        color: white;
+        font-weight: 700;
+    }
+
+    .th-day.feiertag {
+        background: #eceff1;
+        color: #90a4ae;
+    }
 
     .th-sticky-header {
         background: var(--header-bg) !important;
@@ -135,11 +224,15 @@
         font-size: 11px;
         font-weight: 600;
         text-align: center;
-        z-index: 30 !important;
+        z-index: 50 !important;
         position: sticky;
         top: 0;
     }
-    .th-sticky-header.row2 { top: 28px; z-index: 25 !important; }
+
+    .th-sticky-header.row2 {
+        top: 28px;
+        z-index: 40 !important;
+    }
 
     /* Group separator rows */
     .group-row td {
@@ -151,6 +244,8 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         height: 22px;
+        position: relative;
+        z-index: 5;
     }
 
     /* Locked cell overlay */
@@ -158,11 +253,15 @@
         position: relative;
         cursor: not-allowed !important;
     }
+
     .cell-locked::after {
         content: attr(data-locker);
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(255,200,0,0.25);
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 200, 0, 0.25);
         font-size: 10px;
         display: flex;
         align-items: center;
@@ -177,13 +276,14 @@
         z-index: 1000;
         background: white;
         border-radius: 10px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.10);
         padding: 14px;
         min-width: 260px;
         max-width: 320px;
         display: none;
         border: 1px solid var(--border);
     }
+
     .popup-header {
         font-family: var(--font);
         font-size: 12px;
@@ -193,6 +293,7 @@
         padding-bottom: 8px;
         border-bottom: 1px solid var(--border);
     }
+
     .popup-input {
         width: 100%;
         font-family: var(--font-mono);
@@ -205,13 +306,19 @@
         color: var(--text);
         background: white;
     }
-    .popup-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+    .popup-input:focus {
+        outline: 2px solid var(--accent);
+        border-color: transparent;
+    }
+
     .sondertag-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 5px;
         margin-bottom: 10px;
     }
+
     .sondertag-btn {
         border: none;
         border-radius: 5px;
@@ -223,13 +330,60 @@
         text-align: center;
         transition: transform 0.1s, box-shadow 0.1s;
     }
-    .sondertag-btn:hover { transform: scale(1.04); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-    .popup-actions { display: flex; gap: 6px; justify-content: flex-end; }
-    .btn-save { background: var(--accent); color: white; border: none; border-radius: 6px; padding: 6px 16px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-save:hover { background: var(--accent-dark); }
-    .btn-clear { background: #ffebee; color: #c62828; border: none; border-radius: 6px; padding: 6px 14px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-clear:hover { background: #ffcdd2; }
-    .btn-cancel { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-family: var(--font); font-size: 13px; cursor: pointer; }
+
+    .sondertag-btn:hover {
+        transform: scale(1.04);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .popup-actions {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .btn-save {
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 16px;
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-save:hover {
+        background: var(--accent-dark);
+    }
+
+    .btn-clear {
+        background: #ffebee;
+        color: #c62828;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-clear:hover {
+        background: #ffcdd2;
+    }
+
+    .btn-cancel {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-family: var(--font);
+        font-size: 13px;
+        cursor: pointer;
+    }
 </style>
 {% endblock %}
 
@@ -271,8 +425,8 @@
 
 {% block scripts %}
 <script>
-const SONDERTAG_FARBEN = {{ sondertag_farben | tojson }};
-const GRUPPEN_FARBEN   = {{ gruppen_farben | tojson }};
+    const SONDERTAG_FARBEN = {{ sondertag_farben | tojson }};
+    const GRUPPEN_FARBEN = {{ gruppen_farben | tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}
