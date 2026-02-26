@@ -1,5 +1,8 @@
 // ─── Kalender ─────────────────────────────────────────────────────────────────
 
+// Sicheres Rendering-Flag gegen Doppel-Submit
+let _saving = false;
+
 const TAGE_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
@@ -19,7 +22,7 @@ let popupKey = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Warte bis App geladen (app.js)
-    await waitFor(() => typeof alleMitarbeiter !== 'undefined' && alleMitarbeiter.length >= 0, 2000);
+    await waitFor(() => typeof alleMitarbeiter !== 'undefined' && alleMitarbeiter.length > 0, 2000);
 
     buildDayArray();
     await Promise.all([loadFeiertage(), loadMitarbeiter()]);
@@ -69,15 +72,31 @@ async function loadFeiertage() {
 }
 
 async function loadMitarbeiter() {
-    const res = await fetch('/api/mitarbeiter');
-    mitarbeiter = await res.json();
+    try {
+        const res = await fetch('/api/mitarbeiter');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        mitarbeiter = await res.json();
+    } catch (e) {
+        console.error('Mitarbeiter laden fehlgeschlagen', e);
+        document.getElementById('calendarBody').innerHTML =
+            `<tr><td colspan="999" style="padding:20px;text-align:center;color:#c62828">
+             ⚠ Mitarbeiter konnten nicht geladen werden. Bitte Seite neu laden.
+             </td></tr>`;
+    }
 }
 
 async function loadEinsaetze() {
-    const von = `${calYear}-01-01`;
-    const bis = `${calYear}-12-31`;
-    const res = await fetch(`/api/einsaetze?von=${von}&bis=${bis}`);
-    einsaetze = await res.json();
+    try {
+        const von = `${calYear}-01-01`;
+        const bis = `${calYear}-12-31`;
+        const res = await fetch(`/api/einsaetze?von=${von}&bis=${bis}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        einsaetze = await res.json();
+    } catch (e) {
+        console.error('Einsätze laden fehlgeschlagen', e);
+        showToast('Einsätze konnten nicht geladen werden', 'error');
+        einsaetze = {};
+    }
 }
 
 // ─── Kalender rendern ─────────────────────────────────────────────────────────
@@ -176,7 +195,7 @@ function buildMitarbeiterRow(ma, today) {
     // Name-Anzeige mit Badges
     let nameDisplay = escapeHtml(ma.name);
     if (ma.fuehrerschein) nameDisplay += ' <span style="font-size:10px;color:#888">F</span>';
-    if (ma.azubi_block) nameDisplay += ` <span style="font-size:10px;background:#e3f2fd;color:#1565C0;border-radius:3px;padding:1px 4px">${ma.azubi_block}</span>`;
+    if (ma.azubi_block) nameDisplay += ` <span style="font-size:10px;background:#e3f2fd;color:#1565C0;border-radius:3px;padding:1px 4px">${escapeHtml(ma.azubi_block)}</span>`;
     if (ma.verleihfirma) nameDisplay += ` <span style="font-size:10px;color:#aaa">(${escapeHtml(ma.verleihfirma)})</span>`;
 
     let row = `<tr data-mid="${ma.id}">
@@ -326,7 +345,8 @@ function clearCell() {
 }
 
 async function saveCell() {
-    if (!popupMid || !popupDatum) { closePopup(); return; }
+    if (!popupMid || !popupDatum || _saving) { if (!_saving) closePopup(); return; }
+    _saving = true;
 
     const btnSave = document.querySelector('.btn-save');
     if (btnSave) btnSave.disabled = true;
@@ -367,6 +387,7 @@ async function saveCell() {
         showToast('Fehler beim Speichern', 'error');
     } finally {
         if (btnSave) btnSave.disabled = false;
+        _saving = false;
     }
 
     closePopup();
@@ -390,6 +411,11 @@ function updateCell(mid, datum, inhalt) {
 
 function setupSocketListeners() {
     if (!socket) return;
+
+    socket.off('cell_locked');
+    socket.off('cell_unlocked');
+    socket.off('cell_lock_denied');
+    socket.off('cell_updated');
 
     socket.on('cell_locked', ({ key, name }) => {
         const td = document.querySelector(`td[data-key="${key}"]`);
@@ -430,7 +456,7 @@ function buildSondertageGrid() {
     const grid = document.getElementById('sondertageGrid');
     if (!grid) return;
     grid.innerHTML = Object.entries(SONDERTAG_FARBEN).map(([key, farbe]) => `
-        <button class="sondertag-btn"
+        <button type="button" class="sondertag-btn"
                 style="background:${farbe.bg};color:${farbe.text}"
                 onclick="setSondertag('${escapeHtml(key)}')">${escapeHtml(key)}</button>
     `).join('');

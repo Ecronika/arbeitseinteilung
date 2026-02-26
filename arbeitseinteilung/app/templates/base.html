@@ -32,7 +32,8 @@
             </nav>
         </div>
         <div class="header-right">
-            <div class="user-badge" id="userBadge" onclick="openUserSelect()">
+            <div class="user-badge" id="userBadge" role="button" tabindex="0" onclick="openUserSelect()"
+                onkeydown="if(event.key==='Enter'||event.key===' ')openUserSelect()">
                 <span class="user-icon">👤</span>
                 <span id="userName">Wer bist du?</span>
             </div>
@@ -57,7 +58,7 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
