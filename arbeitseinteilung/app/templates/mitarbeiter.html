@@ -200,6 +200,7 @@
         document.getElementById('maModalTitle').textContent = ma ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen';
         onTypChange();
         document.getElementById('maModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('maName').focus(), 50);
     }
 
     function editMitarbeiter(id) {
@@ -227,6 +228,10 @@
             aktiv: true
         };
         if (!payload.name) { alert('Name ist erforderlich'); return; }
+
+        const btnSave = document.querySelector('#maModal .btn-primary');
+        if (btnSave) btnSave.disabled = true;
+
         const url = id ? `/api/mitarbeiter/${id}` : '/api/mitarbeiter';
         const method = id ? 'PUT' : 'POST';
         try {
@@ -237,6 +242,9 @@
             showToast(id ? 'Aktualisiert' : 'Mitarbeiter angelegt', 'success');
         } catch (e) {
             showToast('Fehler beim Speichern', 'error');
+            console.error(e);
+        } finally {
+            if (btnSave) btnSave.disabled = false;
         }
     }
 

@@ -229,7 +229,7 @@ function buildMitarbeiterRow(ma, today) {
         if (isToday) cls += ' is-today';
         if (isFeiertag && !inhalt) cls += ' feiertag';
 
-        const displayText = isFeiertag && !inhalt ? feiertage[ds] : escapeHtml(inhalt);
+        const displayText = isFeiertag && !inhalt ? escapeHtml(feiertage[ds]) : escapeHtml(inhalt);
 
         row += `<td class="${cls}" data-mid="${ma.id}" data-date="${ds}" data-key="${key}"
                     style="background:${bg};color:${text}"
@@ -415,7 +415,7 @@ function updateCell(mid, datum, inhalt) {
     td.style.background = bg;
     td.style.color = text;
 
-    const displayText = isFeiertag && !inhalt ? feiertage[datum] : escapeHtml(inhalt);
+    const displayText = isFeiertag && !inhalt ? feiertage[datum] : inhalt;
     td.textContent = displayText || (isFeiertag ? feiertage[datum] : '');
     td.title = inhalt || (isFeiertag ? feiertage[datum] : '');
 }

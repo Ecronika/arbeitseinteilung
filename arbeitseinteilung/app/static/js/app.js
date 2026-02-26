@@ -125,10 +125,17 @@ function escapeHtml(str) {
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+        let closed = false;
         const openModals = document.querySelectorAll('.modal-overlay');
         openModals.forEach(m => {
-            if (m.style.display && m.style.display !== 'none') m.style.display = 'none';
+            if (m.style.display && m.style.display !== 'none') {
+                m.style.display = 'none';
+                closed = true;
+            }
         });
+        if (closed && document.activeElement !== document.body) {
+            document.body.focus();
+        }
     }
 });
 

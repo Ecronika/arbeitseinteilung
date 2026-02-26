@@ -103,6 +103,7 @@
         document.getElementById('ftDatum').value = '';
         document.getElementById('ftBezeichnung').value = '';
         document.getElementById('ftModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('ftDatum').focus(), 50);
     }
     function closeFtModal() { document.getElementById('ftModal').style.display = 'none'; }
 
@@ -110,6 +111,10 @@
         const datum = document.getElementById('ftDatum').value;
         const bez = document.getElementById('ftBezeichnung').value.trim();
         if (!datum || !bez) { alert('Datum und Bezeichnung erforderlich'); return; }
+
+        const btnSave = document.querySelector('#ftModal .btn-primary');
+        if (btnSave) btnSave.disabled = true;
+
         try {
             const res = await fetch('/api/feiertage', {
                 method: 'POST',
@@ -122,6 +127,9 @@
             showToast('Eintrag hinzugefügt', 'success');
         } catch (e) {
             showToast('Fehler beim Speichern', 'error');
+            console.error(e);
+        } finally {
+            if (btnSave) btnSave.disabled = false;
         }
     }
 

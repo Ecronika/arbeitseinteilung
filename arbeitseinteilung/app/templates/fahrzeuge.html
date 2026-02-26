@@ -147,6 +147,7 @@
         document.getElementById('fzMitarbeiter').value = fz ? (fz.mitarbeiter_id || '') : '';
         document.getElementById('fzModalTitle').textContent = fz ? 'Fahrzeug bearbeiten' : 'Fahrzeug anlegen';
         document.getElementById('fzModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('fzKennzeichen').focus(), 50);
     }
 
     function editFahrzeug(id) {
@@ -169,6 +170,10 @@
             aktiv: true
         };
         if (!payload.kennzeichen) { alert('Kennzeichen ist erforderlich'); return; }
+
+        const btnSave = document.querySelector('#fzModal .btn-primary');
+        if (btnSave) btnSave.disabled = true;
+
         const url = id ? `/api/fahrzeuge/${id}` : '/api/fahrzeuge';
         const method = id ? 'PUT' : 'POST';
         try {
@@ -179,6 +184,9 @@
             showToast('Gespeichert', 'success');
         } catch (e) {
             showToast('Fehler beim Speichern', 'error');
+            console.error(e);
+        } finally {
+            if (btnSave) btnSave.disabled = false;
         }
     }
 </script>
