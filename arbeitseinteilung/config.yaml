@@ -1,0 +1,16 @@
+name: "Arbeitseinteilung"
+version: "1.0.0"
+slug: "arbeitseinteilung_app"
+description: "Interne Webanwendung zur Mitarbeitereinsatzplanung."
+arch:
+  - aarch64
+  - amd64
+  - armv7
+init: false
+ports:
+  6000/tcp: 6000
+environment:
+  DATABASE_PATH: "/data/arbeitseinteilung.db"
+  FLASK_ENV: "production"
+options: {}
+schema: {}
