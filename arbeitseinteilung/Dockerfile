@@ -11,6 +11,6 @@ COPY . .
 # Skript ausführbar machen
 RUN chmod a+x /app/run.sh
 
-EXPOSE 6000
+EXPOSE 8090
 
 CMD [ "/app/run.sh" ]

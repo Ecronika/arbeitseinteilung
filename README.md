@@ -27,7 +27,7 @@ cd arbeitseinteilung
 docker-compose up -d --build
 ```
 
-Die App ist danach erreichbar unter: `http://<server-ip>:6000`
+Die App ist danach erreichbar unter: `http://<server-ip>:8090`
 
 ## Aktualisieren
 
@@ -47,4 +47,4 @@ Die SQLite-Datenbank liegt unter `./data/arbeitseinteilung.db` und wird als Volu
 - **Server**: Gunicorn + Eventlet
 - **Frontend**: Vanilla HTML/CSS/JavaScript
 - **Echtzeit**: WebSockets via Socket.IO
-- **Port**: 6000
+- **Port**: 8090

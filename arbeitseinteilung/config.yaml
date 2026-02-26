@@ -8,7 +8,7 @@ arch:
   - armv7
 init: false
 ports:
-  6000/tcp: 6000
+  8090/tcp: 8090
 environment:
   DATABASE_PATH: "/data/arbeitseinteilung.db"
   FLASK_ENV: "production"
