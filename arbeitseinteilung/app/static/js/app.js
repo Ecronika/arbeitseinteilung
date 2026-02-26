@@ -3,6 +3,7 @@
 let currentUser = { id: null, name: null };
 let alleMitarbeiter = [];
 let socket;
+let lastFocusedElement = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -11,7 +12,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket = io({ transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => console.log('Socket verbunden:', socket.id));
-    socket.on('disconnect', () => console.warn('Socket getrennt'));
+    socket.on('disconnect', () => {
+        console.warn('Socket getrennt');
+        showToast('Verbindung verloren (Offline)', 'error');
+    });
+    socket.on('reconnect', () => {
+        showToast('Verbindung wiederhergestellt', 'success');
+    });
 
     // Mitarbeiterliste laden
     try {
@@ -101,6 +108,7 @@ function showToast(msg, type = 'success') {
     if (!toastEl) {
         toastEl = document.createElement('div');
         toastEl.className = 'toast';
+        toastEl.setAttribute('aria-live', 'polite');
         document.body.appendChild(toastEl);
     }
     toastEl.textContent = msg;
@@ -133,7 +141,9 @@ document.addEventListener('keydown', e => {
                 closed = true;
             }
         });
-        if (closed && document.activeElement !== document.body) {
+        if (closed && lastFocusedElement) {
+            lastFocusedElement.focus();
+        } else if (closed && document.activeElement !== document.body) {
             document.body.focus();
         }
     }

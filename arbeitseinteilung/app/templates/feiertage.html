@@ -17,7 +17,7 @@
 <div id="ftModal" class="modal-overlay" style="display:none">
     <div class="modal" style="width:380px" role="dialog" aria-modal="true" aria-labelledby="ftModalTitle">
         <h2 id="ftModalTitle">Eintrag hinzufügen</h2><br>
-        <div class="form-grid">
+        <form class="form-grid" onsubmit="event.preventDefault(); saveFeiertag();">
             <div class="form-group">
                 <label class="form-label">Datum *</label>
                 <input class="form-input" type="date" id="ftDatum">
@@ -26,7 +26,7 @@
                 <label class="form-label">Bezeichnung *</label>
                 <input class="form-input" id="ftBezeichnung" placeholder="z.B. Betriebsferien">
             </div>
-        </div>
+        </form>
         <br>
         <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeFtModal()">Abbrechen</button>

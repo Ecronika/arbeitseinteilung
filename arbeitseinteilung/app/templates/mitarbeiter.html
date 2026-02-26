@@ -17,7 +17,7 @@
         aria-labelledby="maModalTitle">
         <h2 id="maModalTitle">Mitarbeiter anlegen</h2>
         <br>
-        <div class="form-grid">
+        <form class="form-grid" onsubmit="event.preventDefault(); saveMitarbeiter();">
             <input type="hidden" id="maId">
             <div class="form-group">
                 <label class="form-label">Name *</label>
@@ -78,7 +78,7 @@
                 <label class="form-label">Einsatz bis</label>
                 <input class="form-input" type="date" id="maEinsatzBis">
             </div>
-        </div>
+        </form>
         <br>
         <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeMaModal()">Abbrechen</button>

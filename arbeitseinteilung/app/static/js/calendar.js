@@ -35,6 +35,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (td) onCellClick({ currentTarget: td });
     });
 
+    document.getElementById('calendarBody').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const td = e.target.closest('td.day-col');
+            if (td) onCellClick({ currentTarget: td });
+        }
+    });
+
     scrollToToday();
     setupSocketListeners();
     setupDatePicker();
@@ -231,7 +238,7 @@ function buildMitarbeiterRow(ma, today) {
 
         const displayText = isFeiertag && !inhalt ? escapeHtml(feiertage[ds]) : escapeHtml(inhalt);
 
-        row += `<td class="${cls}" data-mid="${ma.id}" data-date="${ds}" data-key="${key}"
+        row += `<td class="${cls}" data-mid="${ma.id}" data-date="${ds}" data-key="${key}" tabindex="0"
                     style="background:${bg};color:${text}"
                     title="${isFeiertag && !inhalt ? escapeHtml(feiertage[ds]) : escapeHtml(inhalt)}">${displayText}</td>`;
     });
@@ -286,6 +293,11 @@ function onCellClick(e) {
     const td = e.currentTarget;
     if (td.classList.contains('cell-locked')) return;
 
+    if (popupKey && popupKey !== td.dataset.key) {
+        if (socket) socket.emit('cell_unlock', { key: popupKey });
+    }
+
+    lastFocusedElement = td; // global aus app.js
     popupMid = parseInt(td.dataset.mid);
     popupDatum = td.dataset.date;
     popupKey = td.dataset.key;
@@ -407,7 +419,7 @@ async function saveCell() {
 }
 
 function updateCell(mid, datum, inhalt) {
-    const td = document.querySelector(`td[data-mid="${mid}"][data-date="${datum}"]`);
+    const td = document.querySelector(`td[data-key="${mid}_${datum}"]`);
     if (!td) return;
 
     const isFeiertag = !!feiertage[datum];

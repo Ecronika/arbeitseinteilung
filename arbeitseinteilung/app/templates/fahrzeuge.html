@@ -15,7 +15,7 @@
     <div class="modal" style="width:480px;max-width:95vw" role="dialog" aria-modal="true"
         aria-labelledby="fzModalTitle">
         <h2 id="fzModalTitle">Fahrzeug anlegen</h2><br>
-        <div class="form-grid">
+        <form class="form-grid" onsubmit="event.preventDefault(); saveFahrzeug();">
             <input type="hidden" id="fzId">
             <div class="form-group">
                 <label class="form-label">Kennzeichen *</label>
@@ -56,7 +56,7 @@
                     <option value="">– kein / verfügbar –</option>
                 </select>
             </div>
-        </div>
+        </form>
         <br>
         <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeFzModal()">Abbrechen</button>
