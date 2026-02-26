@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Fahrzeuge – Arbeitseinteilung{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="page-header">
+        <div class="page-title">Fahrzeugverwaltung</div>
+        <button class="btn btn-primary" onclick="openFahrzeugForm()">+ Fahrzeug anlegen</button>
+    </div>
+
+    <div id="fahrzeugTabelle"></div>
+</div>
+
+<div id="fzModal" class="modal-overlay" style="display:none">
+    <div class="modal" style="width:480px;max-width:95vw">
+        <h2 id="fzModalTitle">Fahrzeug anlegen</h2><br>
+        <div class="form-grid">
+            <input type="hidden" id="fzId">
+            <div class="form-group">
+                <label class="form-label">Kennzeichen *</label>
+                <input class="form-input" id="fzKennzeichen" placeholder="HH CB 1234" style="font-family:var(--font-mono)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Baujahr</label>
+                <input class="form-input" id="fzBaujahr" placeholder="24" maxlength="2" style="font-family:var(--font-mono)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kraftstoff</label>
+                <select class="form-select" id="fzKraftstoff">
+                    <option value="D">D – Diesel</option>
+                    <option value="B">B – Benzin</option>
+                    <option value="E">E – Elektro</option>
+                    <option value="D/E">D/E – Hybrid (Diesel)</option>
+                    <option value="B/E">B/E – Hybrid (Benzin)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="fzStatus">
+                    <option value="Aktiv">Aktiv</option>
+                    <option value="Geparkt">Geparkt</option>
+                    <option value="Werkstatt">Werkstatt</option>
+                    <option value="Defekt">Defekt</option>
+                </select>
+            </div>
+            <div class="form-group full">
+                <label class="form-label">Statuskommentar</label>
+                <input class="form-input" id="fzStatusKommentar" placeholder="z.B. TÜV fällig 15.03.">
+            </div>
+            <div class="form-group full">
+                <label class="form-label">Zugeordneter Mitarbeiter</label>
+                <select class="form-select" id="fzMitarbeiter">
+                    <option value="">– kein / verfügbar –</option>
+                </select>
+            </div>
+        </div>
+        <br>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeFzModal()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="saveFahrzeug()">Speichern</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let fzData = [];
+let maListe = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadFahrzeuge();
+    const res = await fetch('/api/mitarbeiter');
+    const data = await res.json();
+    maListe = data.alle || [];
+    const sel = document.getElementById('fzMitarbeiter');
+    maListe.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.id;
+        o.textContent = m.name + ' (' + m.gruppe + ')';
+        sel.appendChild(o);
+    });
+});
+
+async function loadFahrzeuge() {
+    const res = await fetch('/api/fahrzeuge');
+    fzData = await res.json();
+    renderFzTabelle();
+}
+
+function renderFzTabelle() {
+    const statusKlasse = { 'Aktiv':'status-aktiv','Geparkt':'status-geparkt','Werkstatt':'status-werkstatt','Defekt':'status-defekt' };
+    const verfuegbar = fzData.filter(f => !f.mitarbeiter_id);
+    const zugeordnet = fzData.filter(f => f.mitarbeiter_id);
+
+    let html = '';
+
+    if (verfuegbar.length > 0) {
+        html += `<div class="section-card"><div class="section-card-header">Verfügbare Fahrzeuge (${verfuegbar.length})</div>
+        <table class="data-table"><thead><tr><th>Kennzeichen</th><th>Baujahr/KS</th><th>Status</th><th>Kommentar</th><th>Aktionen</th></tr></thead><tbody>
+        ${verfuegbar.map(fzRow).join('')}</tbody></table></div>`;
+    }
+
+    html += `<div class="section-card"><div class="section-card-header">Zugeordnete Fahrzeuge (${zugeordnet.length})</div>
+    <table class="data-table"><thead><tr><th>Kennzeichen</th><th>Baujahr/KS</th><th>Mitarbeiter</th><th>Status</th><th>Kommentar</th><th>Aktionen</th></tr></thead><tbody>
+    ${zugeordnet.map(f => `<tr>
+        <td style="font-family:var(--font-mono);font-weight:600">${escapeHtml(f.kennzeichen)}</td>
+        <td style="font-family:var(--font-mono)">${f.baujahr||''}${f.kraftstoff ? '/'+f.kraftstoff : ''}</td>
+        <td>${escapeHtml(f.mitarbeiter_name||'')}</td>
+        <td><span class="badge ${statusKlasse[f.status]||''}">${f.status}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${escapeHtml(f.status_kommentar||'')}</td>
+        <td>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="editFahrzeug(${f.id})">Bearbeiten</button>
+        </td>
+    </tr>`).join('')}</tbody></table></div>`;
+
+    document.getElementById('fahrzeugTabelle').innerHTML = html;
+}
+
+function fzRow(f) {
+    const statusKlasse = { 'Aktiv':'status-aktiv','Geparkt':'status-geparkt','Werkstatt':'status-werkstatt','Defekt':'status-defekt' };
+    return `<tr>
+        <td style="font-family:var(--font-mono);font-weight:600">${escapeHtml(f.kennzeichen)}</td>
+        <td style="font-family:var(--font-mono)">${f.baujahr||''}${f.kraftstoff ? '/'+f.kraftstoff : ''}</td>
+        <td><span class="badge ${statusKlasse[f.status]||''}">${f.status}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${escapeHtml(f.status_kommentar||'')}</td>
+        <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="editFahrzeug(${f.id})">Bearbeiten</button></td>
+    </tr>`;
+}
+
+function openFahrzeugForm(fz = null) {
+    document.getElementById('fzId').value = fz ? fz.id : '';
+    document.getElementById('fzKennzeichen').value = fz ? fz.kennzeichen : '';
+    document.getElementById('fzBaujahr').value = fz ? (fz.baujahr || '') : '';
+    document.getElementById('fzKraftstoff').value = fz ? (fz.kraftstoff || 'D') : 'D';
+    document.getElementById('fzStatus').value = fz ? fz.status : 'Aktiv';
+    document.getElementById('fzStatusKommentar').value = fz ? (fz.status_kommentar || '') : '';
+    document.getElementById('fzMitarbeiter').value = fz ? (fz.mitarbeiter_id || '') : '';
+    document.getElementById('fzModalTitle').textContent = fz ? 'Fahrzeug bearbeiten' : 'Fahrzeug anlegen';
+    document.getElementById('fzModal').style.display = 'flex';
+}
+
+function editFahrzeug(id) {
+    openFahrzeugForm(fzData.find(f => f.id === id));
+}
+
+function closeFzModal() {
+    document.getElementById('fzModal').style.display = 'none';
+}
+
+async function saveFahrzeug() {
+    const id = document.getElementById('fzId').value;
+    const payload = {
+        kennzeichen: document.getElementById('fzKennzeichen').value.trim(),
+        baujahr: document.getElementById('fzBaujahr').value.trim() || null,
+        kraftstoff: document.getElementById('fzKraftstoff').value,
+        status: document.getElementById('fzStatus').value,
+        status_kommentar: document.getElementById('fzStatusKommentar').value.trim() || null,
+        mitarbeiter_id: document.getElementById('fzMitarbeiter').value || null,
+        aktiv: true
+    };
+    if (!payload.kennzeichen) { alert('Kennzeichen ist erforderlich'); return; }
+    const url = id ? `/api/fahrzeuge/${id}` : '/api/fahrzeuge';
+    const method = id ? 'PUT' : 'POST';
+    await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    closeFzModal();
+    loadFahrzeuge();
+    showToast('Gespeichert', 'success');
+}
+</script>
+{% endblock %}

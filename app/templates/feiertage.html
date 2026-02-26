@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Feiertage – Arbeitseinteilung{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <div class="page-header">
+        <div class="page-title">Feiertage & Betriebskalender</div>
+        <div style="display:flex;gap:10px">
+            <select class="form-select" id="yearSelect" onchange="loadFeiertage()" style="width:100px">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+            </select>
+            <button class="btn btn-ghost" onclick="generiereFeiertage()">⟳ HH-Feiertage generieren</button>
+            <button class="btn btn-primary" onclick="openFeiertagForm()">+ Eintrag hinzufügen</button>
+        </div>
+    </div>
+    <div id="feiertagTabelle"></div>
+</div>
+
+<div id="ftModal" class="modal-overlay" style="display:none">
+    <div class="modal" style="width:380px">
+        <h2>Eintrag hinzufügen</h2><br>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Datum *</label>
+                <input class="form-input" type="date" id="ftDatum">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bezeichnung *</label>
+                <input class="form-input" id="ftBezeichnung" placeholder="z.B. Betriebsferien">
+            </div>
+        </div>
+        <br>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeFtModal()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="saveFeiertag()">Hinzufügen</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let ftData = [];
+document.addEventListener('DOMContentLoaded', loadFeiertage);
+
+async function loadFeiertage() {
+    const year = document.getElementById('yearSelect').value;
+    const res = await fetch(`/api/feiertage?year=${year}`);
+    ftData = await res.json();
+    renderFtTabelle();
+}
+
+function renderFtTabelle() {
+    const html = `<div class="section-card">
+        <table class="data-table">
+            <thead><tr><th>Datum</th><th>Wochentag</th><th>Bezeichnung</th><th>Typ</th><th></th></tr></thead>
+            <tbody>
+                ${ftData.map(f => {
+                    const d = new Date(f.datum + 'T00:00:00');
+                    const tage = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+                    return `<tr>
+                        <td style="font-family:var(--font-mono)">${f.datum}</td>
+                        <td>${tage[d.getDay()]}</td>
+                        <td><strong>${escapeHtml(f.bezeichnung)}</strong></td>
+                        <td><span class="badge" style="background:${f.automatisch ? '#e8f5e9' : '#fff3e0'};color:${f.automatisch ? '#2E7D32' : '#E65100'}">${f.automatisch ? 'Automatisch' : 'Manuell'}</span></td>
+                        <td><button class="btn btn-danger" style="padding:3px 10px;font-size:11px" onclick="deleteFeiertag(${f.id})">Löschen</button></td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    </div>`;
+    document.getElementById('feiertagTabelle').innerHTML = ftData.length ? html : '<p style="color:var(--muted);padding:20px">Keine Einträge für dieses Jahr.</p>';
+}
+
+async function generiereFeiertage() {
+    const year = document.getElementById('yearSelect').value;
+    const res = await fetch('/api/feiertage/generieren', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ year: parseInt(year) })
+    });
+    const data = await res.json();
+    loadFeiertage();
+    showToast(`${data.count} Feiertage generiert`, 'success');
+}
+
+function openFeiertagForm() {
+    document.getElementById('ftDatum').value = '';
+    document.getElementById('ftBezeichnung').value = '';
+    document.getElementById('ftModal').style.display = 'flex';
+}
+function closeFtModal() { document.getElementById('ftModal').style.display = 'none'; }
+
+async function saveFeiertag() {
+    const datum = document.getElementById('ftDatum').value;
+    const bez = document.getElementById('ftBezeichnung').value.trim();
+    if (!datum || !bez) { alert('Datum und Bezeichnung erforderlich'); return; }
+    await fetch('/api/feiertage', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ datum, bezeichnung: bez })
+    });
+    closeFtModal();
+    loadFeiertage();
+    showToast('Eintrag hinzugefügt', 'success');
+}
+
+async function deleteFeiertag(id) {
+    if (!confirm('Eintrag löschen?')) return;
+    await fetch(`/api/feiertage/${id}`, { method: 'DELETE' });
+    loadFeiertage();
+    showToast('Gelöscht', 'success');
+}
+</script>
+{% endblock %}

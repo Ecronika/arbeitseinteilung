@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Arbeitseinteilung{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Arbeitseinteilung</span>
+            </div>
+            <nav class="main-nav">
+                <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Kalender</a>
+                <a href="/mitarbeiter-verwaltung" class="nav-link {% if request.path == '/mitarbeiter-verwaltung' %}active{% endif %}">Mitarbeiter</a>
+                <a href="/fahrzeuge-verwaltung" class="nav-link {% if request.path == '/fahrzeuge-verwaltung' %}active{% endif %}">Fahrzeuge</a>
+                <a href="/feiertage-verwaltung" class="nav-link {% if request.path == '/feiertage-verwaltung' %}active{% endif %}">Feiertage</a>
+                <a href="/historie" class="nav-link {% if request.path == '/historie' %}active{% endif %}">Historie</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <div class="user-badge" id="userBadge" onclick="openUserSelect()">
+                <span class="user-icon">👤</span>
+                <span id="userName">Wer bist du?</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Nutzer-Auswahl Modal -->
+    <div id="userModal" class="modal-overlay" style="display:none">
+        <div class="modal">
+            <h2>Wer bist du?</h2>
+            <p class="modal-sub">Deine Auswahl wird für diesen PC gespeichert.</p>
+            <input type="text" id="userSearch" placeholder="Name suchen..." class="modal-search" oninput="filterUserList()">
+            <div id="userList" class="user-list"></div>
+            <div class="modal-footer">
+                <button onclick="closeUserModal()" class="btn btn-ghost">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
