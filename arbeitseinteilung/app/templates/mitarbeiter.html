@@ -20,15 +20,15 @@
         <form class="form-grid" onsubmit="event.preventDefault(); saveMitarbeiter();">
             <input type="hidden" id="maId">
             <div class="form-group">
-                <label class="form-label">Name *</label>
+                <label class="form-label" for="maName">Name *</label>
                 <input class="form-input" id="maName" placeholder="Vor- und Nachname">
             </div>
             <div class="form-group">
-                <label class="form-label">Personalnummer</label>
+                <label class="form-label" for="maPnr">Personalnummer</label>
                 <input class="form-input" id="maPnr" placeholder="z.B. 1041">
             </div>
             <div class="form-group">
-                <label class="form-label">Gruppe</label>
+                <label class="form-label" for="maGruppe">Gruppe</label>
                 <select class="form-select" id="maGruppe">
                     {% for g in gruppen %}
                     <option value="{{ g }}">{{ g }}</option>
@@ -36,7 +36,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Typ</label>
+                <label class="form-label" for="maTyp">Typ</label>
                 <select class="form-select" id="maTyp" onchange="onTypChange()">
                     <option value="Monteur">Monteur</option>
                     <option value="Azubi">Azubi</option>
@@ -45,14 +45,14 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Führerschein</label>
+                <label class="form-label" for="maFuehrerschein">Führerschein</label>
                 <select class="form-select" id="maFuehrerschein">
                     <option value="0">Nein</option>
                     <option value="1">Ja</option>
                 </select>
             </div>
             <div class="form-group" id="azubiBlockWrap" style="display:none">
-                <label class="form-label">Schulblock (Azubi)</label>
+                <label class="form-label" for="maAzubiBlock">Schulblock (Azubi)</label>
                 <select class="form-select" id="maAzubiBlock">
                     <option value="">–</option>
                     <option value="A">Block A</option>
@@ -61,21 +61,21 @@
                 </select>
             </div>
             <div class="form-group" id="betreuerWrap" style="display:none">
-                <label class="form-label">Betreuer (Stammmonteur)</label>
+                <label class="form-label" for="maBetreuer">Betreuer (Stammmonteur)</label>
                 <select class="form-select" id="maBetreuer">
                     <option value="">– kein –</option>
                 </select>
             </div>
             <div class="form-group full" id="verleihWrap" style="display:none">
-                <label class="form-label">Verleihfirma</label>
+                <label class="form-label" for="maVerleihfirma">Verleihfirma</label>
                 <input class="form-input" id="maVerleihfirma" placeholder="z.B. Tempton, Manpower...">
             </div>
             <div class="form-group" id="einsatzVonWrap" style="display:none">
-                <label class="form-label">Einsatz von</label>
+                <label class="form-label" for="maEinsatzVon">Einsatz von</label>
                 <input class="form-input" type="date" id="maEinsatzVon">
             </div>
             <div class="form-group" id="einsatzBisWrap" style="display:none">
-                <label class="form-label">Einsatz bis</label>
+                <label class="form-label" for="maEinsatzBis">Einsatz bis</label>
                 <input class="form-input" type="date" id="maEinsatzBis">
             </div>
         </form>
@@ -211,6 +211,7 @@
 
     function closeMaModal() {
         document.getElementById('maModal').style.display = 'none';
+        if (lastFocusedElement) lastFocusedElement.focus();
     }
 
     async function saveMitarbeiter() {

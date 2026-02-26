@@ -362,9 +362,7 @@ function closePopup() {
     }
     popupMid = null; popupDatum = null; popupKey = null;
 
-    if (document.activeElement === document.getElementById('popupInput')) {
-        document.body.focus();
-    }
+    if (lastFocusedElement) lastFocusedElement.focus();
 }
 
 function clearCell() {

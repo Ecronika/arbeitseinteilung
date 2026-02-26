@@ -18,17 +18,17 @@
         <form class="form-grid" onsubmit="event.preventDefault(); saveFahrzeug();">
             <input type="hidden" id="fzId">
             <div class="form-group">
-                <label class="form-label">Kennzeichen *</label>
+                <label class="form-label" for="fzKennzeichen">Kennzeichen *</label>
                 <input class="form-input" id="fzKennzeichen" placeholder="HH CB 1234"
                     style="font-family:var(--font-mono)">
             </div>
             <div class="form-group">
-                <label class="form-label">Baujahr</label>
+                <label class="form-label" for="fzBaujahr">Baujahr</label>
                 <input class="form-input" id="fzBaujahr" placeholder="24" maxlength="2"
                     style="font-family:var(--font-mono)">
             </div>
             <div class="form-group">
-                <label class="form-label">Kraftstoff</label>
+                <label class="form-label" for="fzKraftstoff">Kraftstoff</label>
                 <select class="form-select" id="fzKraftstoff">
                     <option value="D">D – Diesel</option>
                     <option value="B">B – Benzin</option>
@@ -38,7 +38,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Status</label>
+                <label class="form-label" for="fzStatus">Status</label>
                 <select class="form-select" id="fzStatus">
                     <option value="Aktiv">Aktiv</option>
                     <option value="Geparkt">Geparkt</option>
@@ -47,11 +47,11 @@
                 </select>
             </div>
             <div class="form-group full">
-                <label class="form-label">Statuskommentar</label>
+                <label class="form-label" for="fzStatusKommentar">Statuskommentar</label>
                 <input class="form-input" id="fzStatusKommentar" placeholder="z.B. TÜV fällig 15.03.">
             </div>
             <div class="form-group full">
-                <label class="form-label">Zugeordneter Mitarbeiter</label>
+                <label class="form-label" for="fzMitarbeiter">Zugeordneter Mitarbeiter</label>
                 <select class="form-select" id="fzMitarbeiter">
                     <option value="">– kein / verfügbar –</option>
                 </select>
@@ -157,6 +157,7 @@
 
     function closeFzModal() {
         document.getElementById('fzModal').style.display = 'none';
+        if (lastFocusedElement) lastFocusedElement.focus();
     }
 
     async function saveFahrzeug() {

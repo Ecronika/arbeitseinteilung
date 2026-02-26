@@ -60,6 +60,7 @@ function setCurrentUser(id, name) {
 }
 
 function openUserSelect() {
+    lastFocusedElement = document.activeElement;
     renderUserList('');
     document.getElementById('userModal').style.display = 'flex';
     setTimeout(() => document.getElementById('userSearch')?.focus(), 100);
@@ -67,6 +68,7 @@ function openUserSelect() {
 
 function closeUserModal() {
     document.getElementById('userModal').style.display = 'none';
+    if (lastFocusedElement) lastFocusedElement.focus();
 }
 
 function filterUserList() {
