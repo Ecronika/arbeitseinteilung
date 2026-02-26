@@ -1,3 +1,16 @@
+# Datenbank (niemals ins Repo!)
+*.db
+*.sqlite
+
+# Umgebungsvariablen
+.env
+
+# Docker
+*.log
+
+# VS Code / Editor
+.vscode/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
