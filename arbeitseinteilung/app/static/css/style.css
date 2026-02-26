@@ -1,6 +1,6 @@
 :root {
-    --font: 'IBM Plex Sans', sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
+    --font: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
     --header-bg: #1a2744;
     --accent: #1565C0;
     --accent-dark: #0d47a1;

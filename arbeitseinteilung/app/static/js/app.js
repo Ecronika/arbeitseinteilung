@@ -66,11 +66,17 @@ function renderUserList(query) {
         m.name.toLowerCase().includes(query.toLowerCase())
     );
     list.innerHTML = filtered.map(m => `
-        <div class="user-list-item" onclick="selectUser(${m.id}, '${escapeHtml(m.name)}')">
+        <div class="user-list-item" data-id="${m.id}" data-name="${escapeHtml(m.name)}" style="cursor:pointer">
             <div>${escapeHtml(m.name)}</div>
-            <div class="item-sub">${m.gruppe || ''} · ${m.typ || ''}</div>
+            <div class="item-sub">${escapeHtml(m.gruppe || '')} · ${escapeHtml(m.typ || '')}</div>
         </div>
     `).join('') || '<div class="user-list-item" style="color:#aaa">Keine Treffer</div>';
+
+    // Event Delegation statt onclick-Inline
+    list.onclick = e => {
+        const item = e.target.closest('[data-id]');
+        if (item) selectUser(parseInt(item.dataset.id), item.dataset.name);
+    };
 }
 
 async function selectUser(id, name) {
@@ -117,8 +123,10 @@ function escapeHtml(str) {
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-        const openModals = document.querySelectorAll('.modal-overlay[style*="display: flex"]');
-        openModals.forEach(m => m.style.display = 'none');
+        const openModals = document.querySelectorAll('.modal-overlay');
+        openModals.forEach(m => {
+            if (m.style.display && m.style.display !== 'none') m.style.display = 'none';
+        });
     }
 });
 

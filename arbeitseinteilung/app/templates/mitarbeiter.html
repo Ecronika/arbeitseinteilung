@@ -92,7 +92,18 @@
 <script>
     let maData = [];
 
-    document.addEventListener('DOMContentLoaded', loadMaTabelle);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMaTabelle();
+
+        // Event Delegation für Tabellen-Buttons
+        document.getElementById('mitarbeiterTabelle').addEventListener('click', e => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            const id = parseInt(btn.dataset.id);
+            if (btn.dataset.action === 'edit') editMitarbeiter(id);
+            if (btn.dataset.action === 'deactivate') deaktiviereMitarbeiter(id, btn.dataset.name);
+        });
+    });
 
     async function loadMaTabelle() {
         const res = await fetch('/api/mitarbeiter');
@@ -101,6 +112,8 @@
         renderMaTabelle(data.gruppen || {});
         // Betreuer-Dropdown befüllen
         const sel = document.getElementById('maBetreuer');
+        // Bestehende Optionen (außer dem ersten "– kein –") entfernen
+        while (sel.options.length > 1) sel.remove(1);
         maData.filter(m => m.typ === 'Monteur').forEach(m => {
             const o = document.createElement('option');
             o.value = m.id;
@@ -135,13 +148,13 @@
                         <td style="font-family:var(--font-mono);font-size:12px">${m.kennzeichen ? m.kennzeichen + (m.baujahr ? ' · ' + m.baujahr + '/' + m.kraftstoff : '') : '–'}</td>
                         <td>${m.fuehrerschein ? '✓' : '–'}</td>
                         <td style="font-size:12px;color:var(--muted)">
-                            ${m.azubi_block ? 'Block ' + m.azubi_block : ''}
-                            ${m.betreuer_name ? 'bei ' + m.betreuer_name : ''}
-                            ${m.verleihfirma ? m.verleihfirma : ''}
+                            ${m.azubi_block ? 'Block ' + escapeHtml(m.azubi_block) : ''}
+                            ${m.betreuer_name ? 'bei ' + escapeHtml(m.betreuer_name) : ''}
+                            ${m.verleihfirma ? escapeHtml(m.verleihfirma) : ''}
                         </td>
                         <td>
-                            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="editMitarbeiter(${m.id})">Bearbeiten</button>
-                            <button class="btn btn-danger" style="padding:4px 10px;font-size:12px" onclick="deaktiviereMitarbeiter(${m.id}, '${escapeHtml(m.name)}')">Deaktivieren</button>
+                            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" data-action="edit" data-id="${m.id}">Bearbeiten</button>
+                            <button class="btn btn-danger" style="padding:4px 10px;font-size:12px" data-action="deactivate" data-id="${m.id}" data-name="${escapeHtml(m.name)}">Deaktivieren</button>
                         </td>
                     </tr>`).join('')}
                 </tbody>

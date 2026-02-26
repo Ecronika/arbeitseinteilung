@@ -25,9 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await waitFor(() => typeof alleMitarbeiter !== 'undefined' && alleMitarbeiter.length > 0, 2000);
 
     buildDayArray();
-    await Promise.all([loadFeiertage(), loadMitarbeiter()]);
+    const [, maOk] = await Promise.all([loadFeiertage(), loadMitarbeiter()]);
     await loadEinsaetze();
-    renderCalendar();
+    if (maOk !== false) renderCalendar();
 
     // Verwende Event Delegation für alle Kalenderzellen statt 18.000 einzelner Listener
     document.getElementById('calendarBody').addEventListener('click', e => {
@@ -65,10 +65,16 @@ function buildDayArray() {
 }
 
 async function loadFeiertage() {
-    const res = await fetch(`/api/feiertage?year=${calYear}`);
-    const data = await res.json();
-    feiertage = {};
-    data.forEach(f => { feiertage[f.datum] = f.bezeichnung; });
+    try {
+        const res = await fetch(`/api/feiertage?year=${calYear}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        feiertage = {};
+        data.forEach(f => { feiertage[f.datum] = f.bezeichnung; });
+    } catch (e) {
+        console.error('Feiertage laden fehlgeschlagen', e);
+        feiertage = {};
+    }
 }
 
 async function loadMitarbeiter() {
@@ -76,12 +82,14 @@ async function loadMitarbeiter() {
         const res = await fetch('/api/mitarbeiter');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         mitarbeiter = await res.json();
+        return true;
     } catch (e) {
         console.error('Mitarbeiter laden fehlgeschlagen', e);
         document.getElementById('calendarBody').innerHTML =
             `<tr><td colspan="999" style="padding:20px;text-align:center;color:#c62828">
              ⚠ Mitarbeiter konnten nicht geladen werden. Bitte Seite neu laden.
              </td></tr>`;
+        return false;
     }
 }
 
@@ -385,6 +393,7 @@ async function saveCell() {
         showToast('Gespeichert', 'success');
     } catch (e) {
         showToast('Fehler beim Speichern', 'error');
+        return;
     } finally {
         if (btnSave) btnSave.disabled = false;
         _saving = false;
