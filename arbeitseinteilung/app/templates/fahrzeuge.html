@@ -86,9 +86,15 @@
     });
 
     async function loadFahrzeuge() {
-        const res = await fetch('/api/fahrzeuge');
-        fzData = await res.json();
-        renderFzTabelle();
+        try {
+            const res = await fetch('/api/fahrzeuge');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            fzData = await res.json();
+            renderFzTabelle();
+        } catch (e) {
+            showToast('Fahrzeuge konnten nicht geladen werden', 'error');
+            console.error(e);
+        }
     }
 
     function renderFzTabelle() {

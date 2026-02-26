@@ -106,10 +106,17 @@
     });
 
     async function loadMaTabelle() {
-        const res = await fetch('/api/mitarbeiter');
-        const data = await res.json();
-        maData = data.alle || [];
-        renderMaTabelle(data.gruppen || {});
+        try {
+            const res = await fetch('/api/mitarbeiter');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            maData = data.alle || [];
+            renderMaTabelle(data.gruppen || {});
+        } catch (e) {
+            showToast('Mitarbeiter konnten nicht geladen werden', 'error');
+            console.error(e);
+            return;
+        }
         // Betreuer-Dropdown befüllen
         const sel = document.getElementById('maBetreuer');
         // Bestehende Optionen (außer dem ersten "– kein –") entfernen
@@ -144,7 +151,7 @@
                     <tr>
                         <td><strong>${escapeHtml(m.name)}</strong></td>
                         <td style="font-family:var(--font-mono)">${escapeHtml(m.personalnummer || '–')}</td>
-                        <td><span class="badge badge-${g.toLowerCase()}">${m.typ}</span></td>
+                        <td><span class="badge badge-${g.toLowerCase()}">${escapeHtml(m.typ)}</span></td>
                         <td style="font-family:var(--font-mono);font-size:12px">${m.kennzeichen ? escapeHtml(m.kennzeichen) + (m.baujahr ? ' · ' + escapeHtml(m.baujahr) + '/' + escapeHtml(m.kraftstoff) : '') : '–'}</td>
                         <td>${m.fuehrerschein ? '✓' : '–'}</td>
                         <td style="font-size:12px;color:var(--muted)">

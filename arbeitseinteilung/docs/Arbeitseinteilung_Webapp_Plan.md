@@ -4,7 +4,7 @@
 
 Die bisherige Arbeitseinteilung wird als Excel-Datei auf einem Netzwerklaufwerk gepflegt. Da das Unternehmen gewachsen ist, führt die Einschränkung auf einen gleichzeitigen Bearbeiter zunehmend zu Problemen. Ziel ist eine Webanwendung, die dieselbe Übersichtlichkeit bietet, aber gleichzeitiges Bearbeiten durch mehrere Nutzer ermöglicht.
 
-Die bestehende Infrastruktur umfasst einen Raspberry Pi mit Home Assistant, der bereits eine Flask/SQLite/Gunicorn-Anwendung (Werkzeugverwaltung) als Docker-Container betreibt. Die neue Anwendung soll parallel dazu auf **Port 6000** laufen.
+Die bestehende Infrastruktur umfasst einen Raspberry Pi mit Home Assistant, der bereits eine Flask/SQLite/Gunicorn-Anwendung (Werkzeugverwaltung) als Docker-Container betreibt. Die neue Anwendung soll parallel dazu auf **Port 8090** laufen.
 
 ---
 
@@ -17,7 +17,7 @@ Die bestehende Infrastruktur umfasst einen Raspberry Pi mit Home Assistant, der 
 | Server | Gunicorn + Eventlet |
 | Frontend | Vanilla HTML / CSS / JavaScript + Socket.IO |
 | Echtzeit-Sync | WebSockets via Socket.IO |
-| Deployment | Docker Container, Port 6000 |
+| Deployment | Docker Container, Port 8090 |
 | Datenmigration | Einmaliger Import aus bestehender Excel-Datei |
 
 ---
@@ -186,7 +186,7 @@ Jede Zelländerung wird vollständig protokolliert:
 ## Deployment (Docker)
 
 - Eigenständiger Docker-Container, unabhängig von der bestehenden Werkzeugverwaltung
-- Port: **6000**
+- Port: **8090**
 - Registrierung als Home Assistant Addon parallel zur bestehenden Anwendung
 - Datenbankdatei (`arbeitseinteilung.db`) als Volume eingebunden für persistente Datenspeicherung
 

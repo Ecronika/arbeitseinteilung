@@ -12,3 +12,4 @@ services:
     environment:
       - FLASK_ENV=production
       - DATABASE_PATH=/app/data/arbeitseinteilung.db
+      # - SECRET_KEY=<sicherer-zufälliger-wert> # optional überschreiben

@@ -6,7 +6,9 @@ socketio = SocketIO()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'arbeitseinteilung-secret-2024'
+    app.config['SECRET_KEY'] = os.environ.get(
+        'SECRET_KEY', 'arbeitseinteilung-secret-2024'
+    )
     app.config['DATABASE_PATH'] = os.environ.get(
         'DATABASE_PATH',
         os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'arbeitseinteilung.db')

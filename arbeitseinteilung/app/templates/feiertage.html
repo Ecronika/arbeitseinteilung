@@ -54,9 +54,15 @@
 
     async function loadFeiertage() {
         const year = document.getElementById('yearSelect').value;
-        const res = await fetch(`/api/feiertage?year=${year}`);
-        ftData = await res.json();
-        renderFtTabelle();
+        try {
+            const res = await fetch(`/api/feiertage?year=${year}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            ftData = await res.json();
+            renderFtTabelle();
+        } catch (e) {
+            showToast('Feiertage konnten nicht geladen werden', 'error');
+            console.error(e);
+        }
     }
 
     function renderFtTabelle() {
