@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch('/api/mitarbeiter');
         const data = await res.json();
         alleMitarbeiter = data.alle || [];
-    } catch(e) { console.error('Mitarbeiter laden fehlgeschlagen', e); }
+    } catch (e) { console.error('Mitarbeiter laden fehlgeschlagen', e); }
 
     // Nutzer aus IP laden
     await ladeAktuellenNutzer();
@@ -35,7 +35,7 @@ async function ladeAktuellenNutzer() {
         } else {
             openUserSelect();
         }
-    } catch(e) { openUserSelect(); }
+    } catch (e) { openUserSelect(); }
 }
 
 function setCurrentUser(id, name) {
@@ -83,7 +83,7 @@ async function selectUser(id, name) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mitarbeiter_id: id })
         });
-    } catch(e) { /* non-critical */ }
+    } catch (e) { /* non-critical */ }
 }
 
 // ─── Toast-Benachrichtigungen ─────────────────────────────────────────────────
@@ -111,8 +111,16 @@ function escapeHtml(str) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        const openModals = document.querySelectorAll('.modal-overlay[style*="display: flex"]');
+        openModals.forEach(m => m.style.display = 'none');
+    }
+});
 
 function formatDate(d) {
     // Date object → 'YYYY-MM-DD'

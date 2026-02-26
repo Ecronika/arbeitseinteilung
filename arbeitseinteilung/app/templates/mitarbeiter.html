@@ -13,7 +13,8 @@
 
 <!-- Formular Modal -->
 <div id="maModal" class="modal-overlay" style="display:none">
-    <div class="modal" style="width:520px;max-width:95vw">
+    <div class="modal" style="width:520px;max-width:95vw" role="dialog" aria-modal="true"
+        aria-labelledby="maModalTitle">
         <h2 id="maModalTitle">Mitarbeiter anlegen</h2>
         <br>
         <div class="form-grid">
@@ -89,32 +90,32 @@
 
 {% block scripts %}
 <script>
-let maData = [];
+    let maData = [];
 
-document.addEventListener('DOMContentLoaded', loadMaTabelle);
+    document.addEventListener('DOMContentLoaded', loadMaTabelle);
 
-async function loadMaTabelle() {
-    const res = await fetch('/api/mitarbeiter');
-    const data = await res.json();
-    maData = data.alle || [];
-    renderMaTabelle(data.gruppen || {});
-    // Betreuer-Dropdown befüllen
-    const sel = document.getElementById('maBetreuer');
-    maData.filter(m => m.typ === 'Monteur').forEach(m => {
-        const o = document.createElement('option');
-        o.value = m.id;
-        o.textContent = m.name;
-        sel.appendChild(o);
-    });
-}
+    async function loadMaTabelle() {
+        const res = await fetch('/api/mitarbeiter');
+        const data = await res.json();
+        maData = data.alle || [];
+        renderMaTabelle(data.gruppen || {});
+        // Betreuer-Dropdown befüllen
+        const sel = document.getElementById('maBetreuer');
+        maData.filter(m => m.typ === 'Monteur').forEach(m => {
+            const o = document.createElement('option');
+            o.value = m.id;
+            o.textContent = m.name;
+            sel.appendChild(o);
+        });
+    }
 
-function renderMaTabelle(gruppen) {
-    const GRUPPEN = ['KD','ST','KDF','MT','P1','P2','Büro'];
-    let html = '';
-    GRUPPEN.forEach(g => {
-        const members = gruppen[g];
-        if (!members || members.length === 0) return;
-        html += `<div class="section-card">
+    function renderMaTabelle(gruppen) {
+        const GRUPPEN = ['KD', 'ST', 'KDF', 'MT', 'P1', 'P2', 'Büro'];
+        let html = '';
+        GRUPPEN.forEach(g => {
+            const members = gruppen[g];
+            if (!members || members.length === 0) return;
+            html += `<div class="section-card">
             <div class="section-card-header" style="background:${getGruppeFarbe(g)};color:white">
                 ${g} – ${members.length} Mitarbeiter
             </div>
@@ -131,11 +132,11 @@ function renderMaTabelle(gruppen) {
                         <td><strong>${escapeHtml(m.name)}</strong></td>
                         <td style="font-family:var(--font-mono)">${m.personalnummer || '–'}</td>
                         <td><span class="badge badge-${g.toLowerCase()}">${m.typ}</span></td>
-                        <td style="font-family:var(--font-mono);font-size:12px">${m.kennzeichen ? m.kennzeichen + (m.baujahr ? ' · '+m.baujahr+'/'+m.kraftstoff : '') : '–'}</td>
+                        <td style="font-family:var(--font-mono);font-size:12px">${m.kennzeichen ? m.kennzeichen + (m.baujahr ? ' · ' + m.baujahr + '/' + m.kraftstoff : '') : '–'}</td>
                         <td>${m.fuehrerschein ? '✓' : '–'}</td>
                         <td style="font-size:12px;color:var(--muted)">
-                            ${m.azubi_block ? 'Block '+m.azubi_block : ''}
-                            ${m.betreuer_name ? 'bei '+m.betreuer_name : ''}
+                            ${m.azubi_block ? 'Block ' + m.azubi_block : ''}
+                            ${m.betreuer_name ? 'bei ' + m.betreuer_name : ''}
                             ${m.verleihfirma ? m.verleihfirma : ''}
                         </td>
                         <td>
@@ -146,79 +147,79 @@ function renderMaTabelle(gruppen) {
                 </tbody>
             </table>
         </div>`;
-    });
-    document.getElementById('mitarbeiterTabelle').innerHTML = html || '<p style="color:var(--muted);padding:20px">Noch keine Mitarbeiter angelegt.</p>';
-}
+        });
+        document.getElementById('mitarbeiterTabelle').innerHTML = html || '<p style="color:var(--muted);padding:20px">Noch keine Mitarbeiter angelegt.</p>';
+    }
 
-function getGruppeFarbe(g) {
-    const f = {'KD':'#1565C0','ST':'#2E7D32','KDF':'#6A1B9A','MT':'#E65100','P1':'#00695C','P2':'#558B2F','Büro':'#4E342E'};
-    return f[g] || '#555';
-}
+    function getGruppeFarbe(g) {
+        const f = { 'KD': '#1565C0', 'ST': '#2E7D32', 'KDF': '#6A1B9A', 'MT': '#E65100', 'P1': '#00695C', 'P2': '#558B2F', 'Büro': '#4E342E' };
+        return f[g] || '#555';
+    }
 
-function onTypChange() {
-    const typ = document.getElementById('maTyp').value;
-    document.getElementById('azubiBlockWrap').style.display = (typ === 'Azubi') ? 'block' : 'none';
-    document.getElementById('betreuerWrap').style.display = (typ === 'Azubi' || typ === 'Praktikant') ? 'block' : 'none';
-    document.getElementById('verleihWrap').style.display = (typ === 'Leiharbeiter') ? 'block' : 'none';
-    document.getElementById('einsatzVonWrap').style.display = (typ === 'Leiharbeiter') ? 'block' : 'none';
-    document.getElementById('einsatzBisWrap').style.display = (typ === 'Leiharbeiter') ? 'block' : 'none';
-}
+    function onTypChange() {
+        const typ = document.getElementById('maTyp').value;
+        document.getElementById('azubiBlockWrap').style.display = (typ === 'Azubi') ? 'block' : 'none';
+        document.getElementById('betreuerWrap').style.display = (typ === 'Azubi' || typ === 'Praktikant') ? 'block' : 'none';
+        document.getElementById('verleihWrap').style.display = (typ === 'Leiharbeiter') ? 'block' : 'none';
+        document.getElementById('einsatzVonWrap').style.display = (typ === 'Leiharbeiter') ? 'block' : 'none';
+        document.getElementById('einsatzBisWrap').style.display = (typ === 'Leiharbeiter') ? 'block' : 'none';
+    }
 
-function openMitarbeiterForm(ma = null) {
-    document.getElementById('maId').value = ma ? ma.id : '';
-    document.getElementById('maName').value = ma ? ma.name : '';
-    document.getElementById('maPnr').value = ma ? (ma.personalnummer || '') : '';
-    document.getElementById('maGruppe').value = ma ? ma.gruppe : 'KD';
-    document.getElementById('maTyp').value = ma ? ma.typ : 'Monteur';
-    document.getElementById('maFuehrerschein').value = ma ? (ma.fuehrerschein ? '1' : '0') : '0';
-    document.getElementById('maAzubiBlock').value = ma ? (ma.azubi_block || '') : '';
-    document.getElementById('maBetreuer').value = ma ? (ma.betreuer_id || '') : '';
-    document.getElementById('maVerleihfirma').value = ma ? (ma.verleihfirma || '') : '';
-    document.getElementById('maEinsatzVon').value = ma ? (ma.einsatz_von || '') : '';
-    document.getElementById('maEinsatzBis').value = ma ? (ma.einsatz_bis || '') : '';
-    document.getElementById('maModalTitle').textContent = ma ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen';
-    onTypChange();
-    document.getElementById('maModal').style.display = 'flex';
-}
+    function openMitarbeiterForm(ma = null) {
+        document.getElementById('maId').value = ma ? ma.id : '';
+        document.getElementById('maName').value = ma ? ma.name : '';
+        document.getElementById('maPnr').value = ma ? (ma.personalnummer || '') : '';
+        document.getElementById('maGruppe').value = ma ? ma.gruppe : 'KD';
+        document.getElementById('maTyp').value = ma ? ma.typ : 'Monteur';
+        document.getElementById('maFuehrerschein').value = ma ? (ma.fuehrerschein ? '1' : '0') : '0';
+        document.getElementById('maAzubiBlock').value = ma ? (ma.azubi_block || '') : '';
+        document.getElementById('maBetreuer').value = ma ? (ma.betreuer_id || '') : '';
+        document.getElementById('maVerleihfirma').value = ma ? (ma.verleihfirma || '') : '';
+        document.getElementById('maEinsatzVon').value = ma ? (ma.einsatz_von || '') : '';
+        document.getElementById('maEinsatzBis').value = ma ? (ma.einsatz_bis || '') : '';
+        document.getElementById('maModalTitle').textContent = ma ? 'Mitarbeiter bearbeiten' : 'Mitarbeiter anlegen';
+        onTypChange();
+        document.getElementById('maModal').style.display = 'flex';
+    }
 
-function editMitarbeiter(id) {
-    const ma = maData.find(m => m.id === id);
-    if (ma) openMitarbeiterForm(ma);
-}
+    function editMitarbeiter(id) {
+        const ma = maData.find(m => m.id === id);
+        if (ma) openMitarbeiterForm(ma);
+    }
 
-function closeMaModal() {
-    document.getElementById('maModal').style.display = 'none';
-}
+    function closeMaModal() {
+        document.getElementById('maModal').style.display = 'none';
+    }
 
-async function saveMitarbeiter() {
-    const id = document.getElementById('maId').value;
-    const payload = {
-        name: document.getElementById('maName').value.trim(),
-        personalnummer: document.getElementById('maPnr').value.trim(),
-        gruppe: document.getElementById('maGruppe').value,
-        typ: document.getElementById('maTyp').value,
-        fuehrerschein: document.getElementById('maFuehrerschein').value === '1',
-        azubi_block: document.getElementById('maAzubiBlock').value || null,
-        betreuer_id: document.getElementById('maBetreuer').value || null,
-        verleihfirma: document.getElementById('maVerleihfirma').value.trim() || null,
-        einsatz_von: document.getElementById('maEinsatzVon').value || null,
-        einsatz_bis: document.getElementById('maEinsatzBis').value || null,
-        aktiv: true
-    };
-    if (!payload.name) { alert('Name ist erforderlich'); return; }
-    const url = id ? `/api/mitarbeiter/${id}` : '/api/mitarbeiter';
-    const method = id ? 'PUT' : 'POST';
-    await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    closeMaModal();
-    loadMaTabelle();
-    showToast(id ? 'Aktualisiert' : 'Mitarbeiter angelegt', 'success');
-}
+    async function saveMitarbeiter() {
+        const id = document.getElementById('maId').value;
+        const payload = {
+            name: document.getElementById('maName').value.trim(),
+            personalnummer: document.getElementById('maPnr').value.trim(),
+            gruppe: document.getElementById('maGruppe').value,
+            typ: document.getElementById('maTyp').value,
+            fuehrerschein: document.getElementById('maFuehrerschein').value === '1',
+            azubi_block: document.getElementById('maAzubiBlock').value || null,
+            betreuer_id: document.getElementById('maBetreuer').value || null,
+            verleihfirma: document.getElementById('maVerleihfirma').value.trim() || null,
+            einsatz_von: document.getElementById('maEinsatzVon').value || null,
+            einsatz_bis: document.getElementById('maEinsatzBis').value || null,
+            aktiv: true
+        };
+        if (!payload.name) { alert('Name ist erforderlich'); return; }
+        const url = id ? `/api/mitarbeiter/${id}` : '/api/mitarbeiter';
+        const method = id ? 'PUT' : 'POST';
+        await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        closeMaModal();
+        loadMaTabelle();
+        showToast(id ? 'Aktualisiert' : 'Mitarbeiter angelegt', 'success');
+    }
 
-async function deaktiviereMitarbeiter(id, name) {
-    if (!confirm(`${name} wirklich deaktivieren? Die Person verschwindet aus dem Kalender, Historik bleibt erhalten.`)) return;
-    await fetch(`/api/mitarbeiter/${id}`, { method: 'DELETE' });
-    loadMaTabelle();
-    showToast(`${name} deaktiviert`, 'success');
-}
+    async function deaktiviereMitarbeiter(id, name) {
+        if (!confirm(`${name} wirklich deaktivieren? Die Person verschwindet aus dem Kalender, Historik bleibt erhalten.`)) return;
+        await fetch(`/api/mitarbeiter/${id}`, { method: 'DELETE' });
+        loadMaTabelle();
+        showToast(`${name} deaktiviert`, 'success');
+    }
 </script>
 {% endblock %}

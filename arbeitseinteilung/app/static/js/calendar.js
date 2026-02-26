@@ -1,19 +1,19 @@
 // ─── Kalender ─────────────────────────────────────────────────────────────────
 
-const TAGE_KURZ = ['So','Mo','Di','Mi','Do','Fr','Sa'];
-const MONATE    = ['Januar','Februar','März','April','Mai','Juni',
-                   'Juli','August','September','Oktober','November','Dezember'];
+const TAGE_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 
-let calYear       = new Date().getFullYear();
-let allDays       = [];      // Array of Date objects for the year
-let feiertage     = {};      // 'YYYY-MM-DD' → bezeichnung
-let einsaetze     = {};      // 'mid_datum' → inhalt
-let mitarbeiter   = {};      // { gruppen: {...}, alle: [...] }
+let calYear = new Date().getFullYear();
+let allDays = [];      // Array of Date objects for the year
+let feiertage = {};      // 'YYYY-MM-DD' → bezeichnung
+let einsaetze = {};      // 'mid_datum' → inhalt
+let mitarbeiter = {};      // { gruppen: {...}, alle: [...] }
 
 // Popup state
-let popupMid      = null;
-let popupDatum    = null;
-let popupKey      = null;
+let popupMid = null;
+let popupDatum = null;
+let popupKey = null;
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     await Promise.all([loadFeiertage(), loadMitarbeiter()]);
     await loadEinsaetze();
     renderCalendar();
+
+    // Verwende Event Delegation für alle Kalenderzellen statt 18.000 einzelner Listener
+    document.getElementById('calendarBody').addEventListener('click', e => {
+        const td = e.target.closest('td.day-col');
+        if (td) onCellClick({ currentTarget: td });
+    });
+
     scrollToToday();
     setupSocketListeners();
     setupDatePicker();
@@ -127,7 +134,7 @@ function renderCalendar() {
     head.innerHTML = monthRow + dayRow;
 
     // ─ Body: Mitarbeitergruppen + Zeilen ─
-    const GRUPPEN = ['KD','ST','KDF','MT','P1','P2','Büro'];
+    const GRUPPEN = ['KD', 'ST', 'KDF', 'MT', 'P1', 'P2', 'Büro'];
     let bodyHtml = '';
     const gruppen = mitarbeiter.gruppen || {};
 
@@ -148,10 +155,7 @@ function renderCalendar() {
 
     body.innerHTML = bodyHtml;
 
-    // Click-Handler für Zellen
-    body.querySelectorAll('td.day-col').forEach(td => {
-        td.addEventListener('click', onCellClick);
-    });
+    // Event Listener werden jetzt via Delegation im DOMContentLoaded gebunden
 }
 
 function buildMitarbeiterRow(ma, today) {
@@ -172,8 +176,8 @@ function buildMitarbeiterRow(ma, today) {
     // Name-Anzeige mit Badges
     let nameDisplay = escapeHtml(ma.name);
     if (ma.fuehrerschein) nameDisplay += ' <span style="font-size:10px;color:#888">F</span>';
-    if (ma.azubi_block)   nameDisplay += ` <span style="font-size:10px;background:#e3f2fd;color:#1565C0;border-radius:3px;padding:1px 4px">${ma.azubi_block}</span>`;
-    if (ma.verleihfirma)  nameDisplay += ` <span style="font-size:10px;color:#aaa">(${escapeHtml(ma.verleihfirma)})</span>`;
+    if (ma.azubi_block) nameDisplay += ` <span style="font-size:10px;background:#e3f2fd;color:#1565C0;border-radius:3px;padding:1px 4px">${ma.azubi_block}</span>`;
+    if (ma.verleihfirma) nameDisplay += ` <span style="font-size:10px;color:#aaa">(${escapeHtml(ma.verleihfirma)})</span>`;
 
     let row = `<tr data-mid="${ma.id}">
         <td class="sticky-col col-nr">${ma.id}</td>
@@ -255,9 +259,9 @@ function onCellClick(e) {
     const td = e.currentTarget;
     if (td.classList.contains('cell-locked')) return;
 
-    popupMid   = parseInt(td.dataset.mid);
+    popupMid = parseInt(td.dataset.mid);
     popupDatum = td.dataset.date;
-    popupKey   = td.dataset.key;
+    popupKey = td.dataset.key;
 
     const isFeiertag = !!feiertage[popupDatum];
     const ma = (mitarbeiter.alle || []).find(m => m.id === popupMid);
@@ -323,10 +327,14 @@ function clearCell() {
 
 async function saveCell() {
     if (!popupMid || !popupDatum) { closePopup(); return; }
+
+    const btnSave = document.querySelector('.btn-save');
+    if (btnSave) btnSave.disabled = true;
+
     const inhalt = document.getElementById('popupInput').value.trim();
 
     try {
-        await fetch('/api/einsaetze', {
+        const response = await fetch('/api/einsaetze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -336,6 +344,8 @@ async function saveCell() {
                 bearbeiter_name: currentUser.name || 'Unbekannt'
             })
         });
+
+        if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
 
         // Lokal aktualisieren
         const key = popupKey;
@@ -353,8 +363,10 @@ async function saveCell() {
         }
 
         showToast('Gespeichert', 'success');
-    } catch(e) {
+    } catch (e) {
         showToast('Fehler beim Speichern', 'error');
+    } finally {
+        if (btnSave) btnSave.disabled = false;
     }
 
     closePopup();
