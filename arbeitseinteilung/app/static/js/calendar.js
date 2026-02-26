@@ -284,7 +284,11 @@ function scrollToDate(dateStr) {
 
 function setupDatePicker() {
     const dp = document.getElementById('datePicker');
-    if (dp) dp.value = formatDate(new Date());
+    if (dp) {
+        dp.value = formatDate(new Date());
+        dp.min = `${calYear}-01-01`;
+        dp.max = `${calYear}-12-31`;
+    }
 }
 
 // ─── Popup ────────────────────────────────────────────────────────────────────

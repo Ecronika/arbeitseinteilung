@@ -186,6 +186,7 @@
     }
 
     function openMitarbeiterForm(ma = null) {
+        lastFocusedElement = document.activeElement;
         document.getElementById('maId').value = ma ? ma.id : '';
         document.getElementById('maName').value = ma ? ma.name : '';
         document.getElementById('maPnr').value = ma ? (ma.personalnummer || '') : '';
@@ -227,7 +228,7 @@
             einsatz_bis: document.getElementById('maEinsatzBis').value || null,
             aktiv: true
         };
-        if (!payload.name) { alert('Name ist erforderlich'); return; }
+        if (!payload.name) { showToast('Name ist erforderlich', 'error'); return; }
 
         const btnSave = document.querySelector('#maModal .btn-primary');
         if (btnSave) btnSave.disabled = true;

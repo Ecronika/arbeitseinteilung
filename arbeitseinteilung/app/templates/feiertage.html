@@ -100,6 +100,7 @@
     }
 
     function openFeiertagForm() {
+        lastFocusedElement = document.activeElement;
         document.getElementById('ftDatum').value = '';
         document.getElementById('ftBezeichnung').value = '';
         document.getElementById('ftModal').style.display = 'flex';
@@ -110,7 +111,7 @@
     async function saveFeiertag() {
         const datum = document.getElementById('ftDatum').value;
         const bez = document.getElementById('ftBezeichnung').value.trim();
-        if (!datum || !bez) { alert('Datum und Bezeichnung erforderlich'); return; }
+        if (!datum || !bez) { showToast('Datum und Bezeichnung erforderlich', 'error'); return; }
 
         const btnSave = document.querySelector('#ftModal .btn-primary');
         if (btnSave) btnSave.disabled = true;

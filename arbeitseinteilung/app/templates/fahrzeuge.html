@@ -138,6 +138,7 @@
     }
 
     function openFahrzeugForm(fz = null) {
+        lastFocusedElement = document.activeElement;
         document.getElementById('fzId').value = fz ? fz.id : '';
         document.getElementById('fzKennzeichen').value = fz ? fz.kennzeichen : '';
         document.getElementById('fzBaujahr').value = fz ? (fz.baujahr || '') : '';
@@ -169,7 +170,7 @@
             mitarbeiter_id: document.getElementById('fzMitarbeiter').value || null,
             aktiv: true
         };
-        if (!payload.kennzeichen) { alert('Kennzeichen ist erforderlich'); return; }
+        if (!payload.kennzeichen) { showToast('Kennzeichen ist erforderlich', 'error'); return; }
 
         const btnSave = document.querySelector('#fzModal .btn-primary');
         if (btnSave) btnSave.disabled = true;
