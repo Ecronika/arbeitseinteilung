@@ -1,1 +1,14 @@
-docker-compose up -d --build
+version: '3.8'
+
+services:
+  arbeitseinteilung:
+    build: .
+    container_name: arbeitseinteilung
+    ports:
+      - "6000:6000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_PATH=/app/data/arbeitseinteilung.db
