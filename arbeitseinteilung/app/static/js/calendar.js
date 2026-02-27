@@ -167,6 +167,7 @@ function renderCalendar() {
         if (isHalbtag) cls += ' half-holiday';
         const title = isFeiertag ? ` title="${escapeHtml(feiertagObj.bezeichnung)}"` : '';
 
+        const isMonday = dow === 1;
         const kwLabel = isMonday
             ? `<div style="font-size:9px;color:#aaa;line-height:1.1;margin:1px 0">KW${getISOWeek(d)}</div>`
             : `<div style="font-size:9px;line-height:1.1;margin:1px 0;visibility:hidden">KW</div>`;
