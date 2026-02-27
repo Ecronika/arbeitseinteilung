@@ -49,8 +49,13 @@ async function ladeAktuellenNutzer() {
         if (data.mitarbeiter_id) {
             setCurrentUser(data.mitarbeiter_id, data.name);
         }
-        // Immer Modal öffnen für Transparenz
-        openUserSelect();
+        // Modal nur einmal pro Browser-Tab-Session zeigen.
+        // sessionStorage wird beim Schließen des Tabs geleert – dadurch
+        // erkennt der Nutzer beim nächsten Öffnen wieder, wer er ist.
+        const confirmed = sessionStorage.getItem('identityConfirmed');
+        if (!confirmed) {
+            openUserSelect();
+        }
     } catch (e) { openUserSelect(); }
 }
 
@@ -93,6 +98,8 @@ function renderUserList(query) {
 
 async function selectUser(id, name) {
     setCurrentUser(id, name);
+    // Merken, dass der Nutzer in dieser Tab-Session bestätigt hat
+    sessionStorage.setItem('identityConfirmed', '1');
     closeUserModal();
     // IP-Zuordnung speichern
     try {
