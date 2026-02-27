@@ -167,10 +167,11 @@ function renderCalendar() {
         if (isHalbtag) cls += ' half-holiday';
         const title = isFeiertag ? ` title="${escapeHtml(feiertagObj.bezeichnung)}"` : '';
 
-        const isMonday = dow === 1;
-        const kwTag = isMonday ? `<div style="font-size:9px;color:#999;font-weight:normal;margin-top:-2px">KW${getISOWeek(d)}</div>` : '';
+        const kwLabel = isMonday
+            ? `<div style="font-size:9px;color:#aaa;line-height:1.1;margin:1px 0">KW${getISOWeek(d)}</div>`
+            : `<div style="font-size:9px;line-height:1.1;margin:1px 0;visibility:hidden">KW</div>`;
 
-        dayRow += `<th class="${cls}"${title} data-date="${ds}">${TAGE_KURZ[dow]}${kwTag}<br>${d.getDate()}</th>`;
+        dayRow += `<th class="${cls}"${title} data-date="${ds}"><div style="font-weight:600">${TAGE_KURZ[dow]}</div>${kwLabel}<div>${d.getDate()}</div></th>`;
     });
     dayRow += '</tr>';
 
