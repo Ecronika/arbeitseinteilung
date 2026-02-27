@@ -171,8 +171,12 @@ document.addEventListener('keydown', e => {
 });
 
 function formatDate(d) {
-    // Date object → 'YYYY-MM-DD'
-    return d.toISOString().slice(0, 10);
+    // Date object → 'YYYY-MM-DD' (lokale Zeitzone, NICHT UTC!)
+    // toISOString() würde UTC verwenden → in UTC+1 wäre Mitternacht der Vortag
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function parseDate(s) {
