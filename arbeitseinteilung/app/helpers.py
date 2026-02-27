@@ -1,7 +1,8 @@
 from datetime import date, timedelta
+from typing import List, Tuple, Dict, Any
 
 
-def easter(year):
+def easter(year: int) -> date:
     """Gauss'sche Osterformel"""
     a = year % 19
     b = year % 4
@@ -20,10 +21,10 @@ def easter(year):
     return date(year, 3, 22) + timedelta(days=d + e)
 
 
-def get_hamburg_holidays(year):
+def get_hamburg_holidays(year: int) -> List[Tuple[date, str]]:
     """Gibt alle Hamburger Feiertage für ein Jahr zurück."""
     e = easter(year)
-    holidays = [
+    holidays: List[Tuple[date, str]] = [
         (date(year, 1, 1),  "Neujahr"),
         (e - timedelta(days=2), "Karfreitag"),
         (e,                  "Ostersonntag"),
@@ -42,14 +43,14 @@ def get_hamburg_holidays(year):
     return holidays
 
 
-SONDERTAG_FARBEN = {
-    "Urlaub":                  {"bg": "#FFF176", "text": "#5D4037"},
-    "Krank":                   {"bg": "#EF9A9A", "text": "#B71C1C"},
-    "Krank wegen Kind":        {"bg": "#EF9A9A", "text": "#B71C1C"},
+SONDERTAG_FARBEN: Dict[str, Dict[str, str]] = {
+    "Urlaub":                  {"bg": "#FFCC00", "text": "#3E2000"},  # Excel: Goldgelb
+    "Krank":                   {"bg": "#FF0000", "text": "#FFFFFF"},  # Excel: Knallrot
+    "Krank wegen Kind":        {"bg": "#FF0000", "text": "#FFFFFF"},  # Excel: gleich wie Krank
     "Schule":                  {"bg": "#92D050", "text": "#1B5E20"},
     "Innung":                  {"bg": "#00B0F0", "text": "#0D47A1"},
-    "Prüfung Gesel. Teil 1/2": {"bg": "#00B0F0", "text": "#0D47A1"},
-    "Schulung Firma":          {"bg": "#B3E5FC", "text": "#01579B"},
+    "Prüfung Gesel. Teil 1/2": {"bg": "#E6B9B8", "text": "#4E342E"},  # Excel: Rosa (nicht Blau)
+    "Schulung Firma":          {"bg": "#8EB4E3", "text": "#0D47A1"},  # Excel: mittleres Blau
     "Überstd.":                {"bg": "#7030A0", "text": "#FFFFFF"},
     "KUG":                     {"bg": "#FAC090", "text": "#4E342E"},
     "Q":                       {"bg": "#9BBB59", "text": "#1B5E20"},
@@ -61,9 +62,9 @@ SONDERTAG_FARBEN = {
     "Berufschule":             {"bg": "#90CAF9", "text": "#0D47A1"},
 }
 
-GRUPPEN_REIHENFOLGE = ["KD", "ST", "P1", "P2", "KDF", "MT", "Büro"]
+GRUPPEN_REIHENFOLGE: List[str] = ["KD", "ST", "P1", "P2", "KDF", "MT", "Büro"]
 
-GRUPPEN_FARBEN = {
+GRUPPEN_FARBEN: Dict[str, str] = {
     "KD":   "#1565C0",
     "ST":   "#2E7D32",
     "KDF":  "#6A1B9A",

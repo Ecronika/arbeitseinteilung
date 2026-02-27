@@ -7,7 +7,8 @@ def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(
             current_app.config['DATABASE_PATH'],
-            detect_types=sqlite3.PARSE_DECLTYPES
+            detect_types=sqlite3.PARSE_DECLTYPES,
+            timeout=10  # Warte bis zu 10s auf Write-Lock statt sofort zu crashen
         )
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA journal_mode=WAL")
@@ -24,7 +25,10 @@ def close_db(e=None):
 def init_db(app):
     app.teardown_appcontext(close_db)
     with app.app_context():
-        db = sqlite3.connect(app.config['DATABASE_PATH'])
+        db = sqlite3.connect(
+            app.config['DATABASE_PATH'],
+            timeout=10
+        )
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA journal_mode=WAL")
         db.execute("PRAGMA foreign_keys=ON")
@@ -94,14 +98,33 @@ def init_db(app):
                 wert_vorher TEXT,
                 wert_nachher TEXT
             );
+
+            -- Migrations-Versionstabelle
+            CREATE TABLE IF NOT EXISTS schema_version (
+                version INTEGER PRIMARY KEY
+            );
+
+            -- Indizes für Abfrage-Performance
+            CREATE INDEX IF NOT EXISTS idx_einsaetze_datum
+                ON einsaetze(datum);
+            CREATE INDEX IF NOT EXISTS idx_historie_zeitstempel
+                ON aenderungshistorie(zeitstempel DESC);
+            CREATE INDEX IF NOT EXISTS idx_historie_mitarbeiter
+                ON aenderungshistorie(mitarbeiter_id);
         """)
 
-        # Migration for existing databases
-        try:
-            db.execute("ALTER TABLE feiertage ADD COLUMN halbtag INTEGER DEFAULT 0")
-            db.execute("UPDATE feiertage SET halbtag=1 WHERE bezeichnung IN ('Heiligabend', 'Silvester')")
-        except sqlite3.OperationalError:
-            pass
+        # ─── Versionierte Migrationen ─────────────────────────────────────────
+        row = db.execute("SELECT MAX(version) FROM schema_version").fetchone()
+        current_version = row[0] if row[0] is not None else 0
+
+        if current_version < 1:
+            # Migration 1: halbtag-Spalte in feiertage einführen
+            try:
+                db.execute("ALTER TABLE feiertage ADD COLUMN halbtag INTEGER DEFAULT 0")
+                db.execute("UPDATE feiertage SET halbtag=1 WHERE bezeichnung IN ('Heiligabend', 'Silvester')")
+            except sqlite3.OperationalError:
+                pass  # Spalte existiert bereits (frische DB hat sie schon)
+            db.execute("INSERT OR IGNORE INTO schema_version VALUES (1)")
 
         # Seed Feiertage if empty
         count = db.execute("SELECT COUNT(*) FROM feiertage").fetchone()[0]

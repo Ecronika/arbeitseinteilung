@@ -1,13 +1,22 @@
-from flask import Blueprint, jsonify, request, render_template, current_app
+from flask import Blueprint, jsonify, request, render_template, current_app, Response
 from datetime import date, datetime
+import csv
+import io
 import json
 from .database import get_db
 from .helpers import SONDERTAG_FARBEN, GRUPPEN_REIHENFOLGE, GRUPPEN_FARBEN, get_hamburg_holidays
 
 bp = Blueprint('main', __name__)
 
+# ─── Validierungskonstanten ─────────────────────────────────────────────────────
 
-def get_client_ip():
+MAX_INHALT_LEN = 500
+MAX_BEZEICHNUNG_LEN = 200
+MAX_NAME_LEN = 100
+MAX_KENNZEICHEN_LEN = 20
+
+
+def get_client_ip() -> str:
     return request.remote_addr
 
 
@@ -23,7 +32,7 @@ def index():
 
 @bp.route('/mitarbeiter-verwaltung')
 def mitarbeiter_seite():
-    return render_template('mitarbeiter.html', gruppen=GRUPPEN_REIHENFOLGE)
+    return render_template('mitarbeiter.html', gruppen=GRUPPEN_REIHENFOLGE, gruppen_farben=GRUPPEN_FARBEN)
 
 
 @bp.route('/fahrzeuge-verwaltung')
@@ -92,6 +101,7 @@ def get_mitarbeiter():
                b.name as betreuer_name
         FROM mitarbeiter m
         LEFT JOIN fahrzeuge f ON f.mitarbeiter_id = m.id AND f.aktiv = 1
+            AND f.id = (SELECT MIN(id) FROM fahrzeuge WHERE mitarbeiter_id = m.id AND aktiv = 1)
         LEFT JOIN mitarbeiter b ON b.id = m.betreuer_id
         WHERE m.aktiv = 1 AND (m.einsatz_bis IS NULL OR m.einsatz_bis >= date('now', 'localtime'))
         ORDER BY m.gruppe, m.sort_order, m.name
@@ -116,8 +126,11 @@ def create_mitarbeiter():
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
-    if not data.get('name') or not str(data['name']).strip():
+    name = str(data.get('name', '')).strip()
+    if not name:
         return jsonify({"error": "name required"}), 422
+    if len(name) > MAX_NAME_LEN:
+        return jsonify({"error": f"name darf maximal {MAX_NAME_LEN} Zeichen lang sein"}), 422
     db = get_db()
     cur = db.execute("""
         INSERT INTO mitarbeiter
@@ -125,7 +138,7 @@ def create_mitarbeiter():
              betreuer_id, verleihfirma, einsatz_von, einsatz_bis, sort_order)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        data['name'], data.get('personalnummer'), data.get('gruppe', 'KD'),
+        name, data.get('personalnummer'), data.get('gruppe', 'KD'),
         data.get('typ', 'Monteur'), 1 if data.get('fuehrerschein') else 0,
         data.get('azubi_block'), data.get('betreuer_id'),
         data.get('verleihfirma'), data.get('einsatz_von'), data.get('einsatz_bis'),
@@ -136,12 +149,15 @@ def create_mitarbeiter():
 
 
 @bp.route('/api/mitarbeiter/<int:mid>', methods=['PUT'])
-def update_mitarbeiter(mid):
+def update_mitarbeiter(mid: int):
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
-    if not data.get('name') or not str(data['name']).strip():
+    name = str(data.get('name', '')).strip()
+    if not name:
         return jsonify({"error": "name required"}), 422
+    if len(name) > MAX_NAME_LEN:
+        return jsonify({"error": f"name darf maximal {MAX_NAME_LEN} Zeichen lang sein"}), 422
     db = get_db()
     db.execute("""
         UPDATE mitarbeiter SET
@@ -150,7 +166,7 @@ def update_mitarbeiter(mid):
             einsatz_von=?, einsatz_bis=?, sort_order=?, aktiv=?
         WHERE id=?
     """, (
-        data['name'], data.get('personalnummer'), data.get('gruppe', 'KD'),
+        name, data.get('personalnummer'), data.get('gruppe', 'KD'),
         data.get('typ', 'Monteur'), 1 if data.get('fuehrerschein') else 0,
         data.get('azubi_block'), data.get('betreuer_id'),
         data.get('verleihfirma'), data.get('einsatz_von'), data.get('einsatz_bis'),
@@ -178,7 +194,7 @@ def reorder_mitarbeiter():
 
 
 @bp.route('/api/mitarbeiter/<int:mid>', methods=['DELETE'])
-def deactivate_mitarbeiter(mid):
+def deactivate_mitarbeiter(mid: int):
     db = get_db()
     db.execute("UPDATE mitarbeiter SET aktiv=0 WHERE id=?", (mid,))
     db.commit()
@@ -205,14 +221,17 @@ def create_fahrzeug():
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
-    if not data.get('kennzeichen') or not str(data['kennzeichen']).strip():
+    kennzeichen = str(data.get('kennzeichen', '')).strip()
+    if not kennzeichen:
         return jsonify({"error": "kennzeichen required"}), 422
+    if len(kennzeichen) > MAX_KENNZEICHEN_LEN:
+        return jsonify({"error": f"kennzeichen darf maximal {MAX_KENNZEICHEN_LEN} Zeichen lang sein"}), 422
     db = get_db()
     cur = db.execute("""
         INSERT INTO fahrzeuge (kennzeichen, baujahr, kraftstoff, status, status_kommentar, mitarbeiter_id)
         VALUES (?, ?, ?, ?, ?, ?)
     """, (
-        data['kennzeichen'], data.get('baujahr'), data.get('kraftstoff', 'D'),
+        kennzeichen, data.get('baujahr'), data.get('kraftstoff', 'D'),
         data.get('status', 'Aktiv'), data.get('status_kommentar'), data.get('mitarbeiter_id')
     ))
     db.commit()
@@ -220,12 +239,15 @@ def create_fahrzeug():
 
 
 @bp.route('/api/fahrzeuge/<int:fid>', methods=['PUT'])
-def update_fahrzeug(fid):
+def update_fahrzeug(fid: int):
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
-    if not data.get('kennzeichen') or not str(data['kennzeichen']).strip():
+    kennzeichen = str(data.get('kennzeichen', '')).strip()
+    if not kennzeichen:
         return jsonify({"error": "kennzeichen required"}), 422
+    if len(kennzeichen) > MAX_KENNZEICHEN_LEN:
+        return jsonify({"error": f"kennzeichen darf maximal {MAX_KENNZEICHEN_LEN} Zeichen lang sein"}), 422
     db = get_db()
     db.execute("""
         UPDATE fahrzeuge SET
@@ -233,7 +255,7 @@ def update_fahrzeug(fid):
             status_kommentar=?, mitarbeiter_id=?, aktiv=?
         WHERE id=?
     """, (
-        data['kennzeichen'], data.get('baujahr'), data.get('kraftstoff', 'D'),
+        kennzeichen, data.get('baujahr'), data.get('kraftstoff', 'D'),
         data.get('status', 'Aktiv'), data.get('status_kommentar'),
         data.get('mitarbeiter_id'), 1 if data.get('aktiv', True) else 0,
         fid
@@ -276,6 +298,9 @@ def save_einsatz():
     datum = data['datum']
     inhalt = data.get('inhalt', '').strip()
 
+    if len(inhalt) > MAX_INHALT_LEN:
+        return jsonify({"error": f"inhalt darf maximal {MAX_INHALT_LEN} Zeichen lang sein"}), 422
+
     old_row = db.execute(
         "SELECT inhalt FROM einsaetze WHERE mitarbeiter_id=? AND datum=?",
         (mid, datum)
@@ -292,7 +317,7 @@ def save_einsatz():
         db.execute("DELETE FROM einsaetze WHERE mitarbeiter_id=? AND datum=?", (mid, datum))
 
     # Historik
-    bearbeiter = data.get('bearbeiter_name', 'Unbekannt')
+    bearbeiter = str(data.get('bearbeiter_name', 'Unbekannt'))[:MAX_NAME_LEN]
     ma_row = db.execute("SELECT name FROM mitarbeiter WHERE id=?", (mid,)).fetchone()
     ma_name = ma_row['name'] if ma_row else str(mid)
 
@@ -326,11 +351,19 @@ def add_feiertag():
     data = request.json or {}
     if not data.get('datum') or not data.get('bezeichnung'):
         return jsonify({"error": "datum and bezeichnung required"}), 422
+    bezeichnung = str(data['bezeichnung']).strip()
+    if len(bezeichnung) > MAX_BEZEICHNUNG_LEN:
+        return jsonify({"error": f"bezeichnung darf maximal {MAX_BEZEICHNUNG_LEN} Zeichen lang sein"}), 422
+    # Datumsformat validieren
+    try:
+        datetime.strptime(str(data['datum']), '%Y-%m-%d')
+    except ValueError:
+        return jsonify({"error": "datum muss das Format YYYY-MM-DD haben"}), 422
     db = get_db()
     try:
         db.execute(
             "INSERT INTO feiertage (datum, bezeichnung, automatisch) VALUES (?, ?, 0)",
-            (data['datum'], data['bezeichnung'])
+            (data['datum'], bezeichnung)
         )
         db.commit()
         return jsonify({"ok": True})
@@ -339,7 +372,7 @@ def add_feiertag():
 
 
 @bp.route('/api/feiertage/<int:fid>', methods=['DELETE'])
-def delete_feiertag(fid):
+def delete_feiertag(fid: int):
     db = get_db()
     db.execute("DELETE FROM feiertage WHERE id=?", (fid,))
     db.commit()
@@ -390,13 +423,44 @@ def get_historie():
     if bis:
         sql += " AND date(zeitstempel) <= ?"
         params.append(bis)
-        
+
     sql += " ORDER BY zeitstempel DESC LIMIT ?"
     params.append(limit)
 
     rows = db.execute(sql, params).fetchall()
     return jsonify([dict(r) for r in rows])
 
+
+# ─── CSV-EXPORT ──────────────────────────────────────────────────────────────────
+
+@bp.route('/api/export/csv')
+def export_csv():
+    """Exportiert alle Einsätze des angegebenen Jahres als CSV-Datei."""
+    year = request.args.get('year', date.today().year, type=int)
+    db = get_db()
+
+    rows = db.execute("""
+        SELECT m.name as mitarbeiter, m.gruppe, e.datum, e.inhalt
+        FROM einsaetze e
+        JOIN mitarbeiter m ON m.id = e.mitarbeiter_id
+        WHERE e.datum LIKE ?
+        ORDER BY m.gruppe, m.name, e.datum
+    """, (f"{year}%",)).fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Mitarbeiter', 'Gruppe', 'Datum', 'Inhalt'])
+    for r in rows:
+        writer.writerow([r['mitarbeiter'], r['gruppe'], r['datum'], r['inhalt'] or ''])
+
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename=einsaetze_{year}.csv'}
+    )
+
+
+# ─── HEALTH ──────────────────────────────────────────────────────────────────────
 
 @bp.route('/api/health')
 def health():

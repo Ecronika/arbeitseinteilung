@@ -375,7 +375,8 @@ body {
 }
 
 .day-col.weekend {
-    background: #f8f8f8 !important;
+    background: #FFC000 !important;
+    /* Excel: Wochenende = Goldgelb */
 }
 
 .col-narrow {
@@ -390,8 +391,8 @@ body {
 }
 
 .th-day.col-narrow {
-    color: #bbb;
-    /* Keep header text color */
+    color: #7B4100;
+    /* Dunkles Amber auf Goldgelb-Hintergrund */
 }
 
 .badge-kd {

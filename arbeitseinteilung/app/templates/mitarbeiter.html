@@ -178,9 +178,9 @@
         document.getElementById('mitarbeiterTabelle').innerHTML = html || '<p style="color:var(--muted);padding:20px">Noch keine Mitarbeiter angelegt.</p>';
     }
 
+    const GRUPPEN_FARBEN_MAP = {{ gruppen_farben | tojson }};
     function getGruppeFarbe(g) {
-        const f = { 'KD': '#1565C0', 'ST': '#2E7D32', 'KDF': '#6A1B9A', 'MT': '#E65100', 'P1': '#00695C', 'P2': '#558B2F', 'Büro': '#4E342E' };
-        return f[g] || '#555';
+        return GRUPPEN_FARBEN_MAP[g] || '#555';
     }
 
     function onTypChange() {

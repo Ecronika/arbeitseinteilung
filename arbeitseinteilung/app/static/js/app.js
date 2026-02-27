@@ -16,8 +16,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn('Socket getrennt');
         showToast('Verbindung verloren (Offline)', 'error');
     });
-    socket.on('reconnect', () => {
-        showToast('Verbindung wiederhergestellt', 'success');
+    socket.on('reconnect', async () => {
+        showToast('Verbindung wiederhergestellt – lade Daten neu…', 'success');
+        // Einsätze neu laden damit keine veralteten Daten angezeigt werden.
+        // Die Funktion ist in calendar.js definiert und nur auf der Kalender-Seite verfügbar.
+        if (typeof loadEinsaetze === 'function' && typeof renderCalendar === 'function') {
+            await loadEinsaetze();
+            renderCalendar();
+        }
     });
 
     // Mitarbeiterliste laden

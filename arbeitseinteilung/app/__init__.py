@@ -1,11 +1,18 @@
 import eventlet
 eventlet.monkey_patch()
 
+import logging
 from flask import Flask
 from flask_socketio import SocketIO
 import os
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s – %(message)s',
+)
+
 socketio = SocketIO()
+
 
 def create_app():
     app = Flask(__name__)
@@ -33,5 +40,13 @@ def create_app():
     from . import sockets  # noqa: F401
     allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:8090')
     socketio.init_app(app, cors_allowed_origins=allowed_origins, async_mode='eventlet')
+
+    # ─── HTTP-Sicherheitsheader ───────────────────────────────────────────────
+    @app.after_request
+    def security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        return response
 
     return app

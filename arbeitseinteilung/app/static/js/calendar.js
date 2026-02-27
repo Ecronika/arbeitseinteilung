@@ -21,8 +21,12 @@ let popupKey = null;
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Warte bis App geladen (app.js)
-    await waitFor(() => typeof alleMitarbeiter !== 'undefined' && alleMitarbeiter.length > 0, 2000);
+    // Warte bis Mitarbeiterliste von app.js geladen wurde
+    if (!alleMitarbeiter || alleMitarbeiter.length === 0) {
+        await new Promise(resolve =>
+            document.addEventListener('app:mitarbeiterLoaded', resolve, { once: true })
+        );
+    }
 
     buildDayArray();
     const [, maOk] = await Promise.all([loadFeiertage(), loadMitarbeiter()]);
@@ -51,16 +55,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupOutsideClick();
 });
 
-function waitFor(fn, timeout) {
-    return new Promise(resolve => {
-        const start = Date.now();
-        const check = () => {
-            if (fn() || Date.now() - start > timeout) resolve();
-            else setTimeout(check, 50);
-        };
-        check();
-    });
-}
 
 // ─── Daten laden ──────────────────────────────────────────────────────────────
 
@@ -271,7 +265,7 @@ function buildMitarbeiterRow(ma, today) {
 }
 
 function getCellStyle(inhalt, isFeiertag, feiertagName) {
-    if (!inhalt && isFeiertag) return { bg: '#eceff1', text: '#546e7a' };
+    if (!inhalt && isFeiertag) return { bg: '#FFC000', text: '#7B4100' };  // Excel: Goldgelb
     if (!inhalt) return { bg: 'transparent', text: 'var(--text)' };
 
     // Sondertag prüfen
@@ -410,6 +404,8 @@ function closePopup() {
 }
 
 function clearCell() {
+    const currentValue = document.getElementById('popupInput').value.trim();
+    if (currentValue && !confirm('Eintrag wirklich löschen?')) return;
     document.getElementById('popupInput').value = '';
     saveCell();
 }
