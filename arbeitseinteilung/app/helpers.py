@@ -1,9 +1,18 @@
+"""Hilfsfunktionen für Feiertage, Farben und Gruppenkonfiguration."""
+
 from datetime import date, timedelta
-from typing import List, Tuple, Dict, Any
+from typing import Dict, List, Tuple
 
 
 def easter(year: int) -> date:
-    """Gauss'sche Osterformel"""
+    """Berechne das Osterdatum nach der Gauss'schen Osterformel.
+
+    Args:
+        year: Das Kalenderjahr (z. B. 2026).
+
+    Returns:
+        Das Datum des Ostersonntags für das angegebene Jahr.
+    """
     a = year % 19
     b = year % 4
     c = year % 7
@@ -22,35 +31,42 @@ def easter(year: int) -> date:
 
 
 def get_hamburg_holidays(year: int) -> List[Tuple[date, str]]:
-    """Gibt alle Hamburger Feiertage für ein Jahr zurück."""
+    """Gib alle Hamburger Feiertage für ein Jahr zurück.
+
+    Args:
+        year: Das Kalenderjahr (z. B. 2026).
+
+    Returns:
+        Liste von (Datum, Bezeichnung)-Tupeln, sortiert nach Datum.
+    """
     e = easter(year)
     holidays: List[Tuple[date, str]] = [
-        (date(year, 1, 1),  "Neujahr"),
-        (e - timedelta(days=2), "Karfreitag"),
-        (e,                  "Ostersonntag"),
-        (e + timedelta(days=1), "Ostermontag"),
-        (date(year, 5, 1),  "Tag der Arbeit"),
-        (e + timedelta(days=39), "Christi Himmelfahrt"),
-        (e + timedelta(days=49), "Pfingstsonntag"),
-        (e + timedelta(days=50), "Pfingstmontag"),
-        (date(year, 10, 3), "Tag der deutschen Einheit"),
-        (date(year, 10, 31), "Reformationstag"),
-        (date(year, 12, 24), "Heiligabend"),
-        (date(year, 12, 25), "1. Weihnachtstag"),
-        (date(year, 12, 26), "2. Weihnachtstag"),
-        (date(year, 12, 31), "Silvester"),
+        (date(year, 1, 1),           "Neujahr"),
+        (e - timedelta(days=2),      "Karfreitag"),
+        (e,                          "Ostersonntag"),
+        (e + timedelta(days=1),      "Ostermontag"),
+        (date(year, 5, 1),           "Tag der Arbeit"),
+        (e + timedelta(days=39),     "Christi Himmelfahrt"),
+        (e + timedelta(days=49),     "Pfingstsonntag"),
+        (e + timedelta(days=50),     "Pfingstmontag"),
+        (date(year, 10, 3),          "Tag der deutschen Einheit"),
+        (date(year, 10, 31),         "Reformationstag"),
+        (date(year, 12, 24),         "Heiligabend"),
+        (date(year, 12, 25),         "1. Weihnachtstag"),
+        (date(year, 12, 26),         "2. Weihnachtstag"),
+        (date(year, 12, 31),         "Silvester"),
     ]
     return holidays
 
 
 SONDERTAG_FARBEN: Dict[str, Dict[str, str]] = {
-    "Urlaub":                  {"bg": "#FFCC00", "text": "#3E2000"},  # Excel: Goldgelb
-    "Krank":                   {"bg": "#FF0000", "text": "#FFFFFF"},  # Excel: Knallrot
-    "Krank wegen Kind":        {"bg": "#FF0000", "text": "#FFFFFF"},  # Excel: gleich wie Krank
+    "Urlaub":                  {"bg": "#FFCC00", "text": "#3E2000"},
+    "Krank":                   {"bg": "#FF0000", "text": "#FFFFFF"},
+    "Krank wegen Kind":        {"bg": "#FF0000", "text": "#FFFFFF"},
     "Schule":                  {"bg": "#92D050", "text": "#1B5E20"},
     "Innung":                  {"bg": "#00B0F0", "text": "#0D47A1"},
-    "Prüfung Gesel. Teil 1/2": {"bg": "#E6B9B8", "text": "#4E342E"},  # Excel: Rosa (nicht Blau)
-    "Schulung Firma":          {"bg": "#8EB4E3", "text": "#0D47A1"},  # Excel: mittleres Blau
+    "Prüfung Gesel. Teil 1/2": {"bg": "#E6B9B8", "text": "#4E342E"},
+    "Schulung Firma":          {"bg": "#8EB4E3", "text": "#0D47A1"},
     "Überstd.":                {"bg": "#7030A0", "text": "#FFFFFF"},
     "KUG":                     {"bg": "#FAC090", "text": "#4E342E"},
     "Q":                       {"bg": "#9BBB59", "text": "#1B5E20"},

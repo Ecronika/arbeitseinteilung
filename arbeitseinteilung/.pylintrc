@@ -1,0 +1,16 @@
+[MESSAGES CONTROL]
+# Disable import-outside-toplevel: Flask app factory pattern requires deferred imports
+# Disable cyclic-import: Flask pattern (socketio registered via side-effect)
+# Disable wrong-import-position: eventlet monkey_patch must be first
+disable=
+    import-outside-toplevel,
+    cyclic-import,
+    wrong-import-position
+
+[FORMAT]
+max-line-length=120
+
+[DESIGN]
+max-args=10
+max-locals=20
+max-statements=60

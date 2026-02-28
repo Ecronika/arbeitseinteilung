@@ -1,14 +1,27 @@
+"""Datenbankverbindung, Initialisierung und Migrationen für Arbeitseinteilung."""
+
 import sqlite3
+from typing import Optional
+
 from flask import g, current_app
+
 from .helpers import get_hamburg_holidays
 
 
-def get_db():
+def get_db() -> sqlite3.Connection:
+    """Liefere die datenbankverbindung für den aktuellen Request-Kontext.
+
+    Öffnet eine neue Verbindung falls noch keine für diesen Request existiert.
+    Die Verbindung wird am Ende des Requests automatisch geschlossen.
+
+    Returns:
+        Die SQLite-Datenbankverbindung (mit Row-Factory).
+    """
     if 'db' not in g:
         g.db = sqlite3.connect(
             current_app.config['DATABASE_PATH'],
             detect_types=sqlite3.PARSE_DECLTYPES,
-            timeout=10  # Warte bis zu 10s auf Write-Lock statt sofort zu crashen
+            timeout=10,
         )
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA journal_mode=WAL")
@@ -16,18 +29,33 @@ def get_db():
     return g.db
 
 
-def close_db(e=None):
+def close_db(exc: Optional[BaseException] = None) -> None:
+    """Schließe die Datenbankverbindung am Ende eines Requests.
+
+    Args:
+        exc: Optionale Ausnahme die den Teardown ausgelöst hat (wird ignoriert).
+    """
+    _ = exc  # Silence unused-argument warning; Flask übergibt exc automatisch
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
 
-def init_db(app):
-    app.teardown_appcontext(close_db)
-    with app.app_context():
+def init_db(app: object) -> None:
+    """Initialisiere Schema, Indizes und Migrationen.
+
+    Erstellt alle Tabellen falls nicht vorhanden, legt Indizes an und führt
+    ausstehende Schemamigration über eine ``schema_version``-Tabelle durch.
+    Befüllt die Feiertage-Tabelle beim Erststart mit Hamburger Feiertagen.
+
+    Args:
+        app: Die Flask-Anwendungsinstanz (muss einen App-Kontext bereitstellen).
+    """
+    app.teardown_appcontext(close_db)  # type: ignore[union-attr]
+    with app.app_context():  # type: ignore[union-attr]
         db = sqlite3.connect(
-            app.config['DATABASE_PATH'],
-            timeout=10
+            app.config['DATABASE_PATH'],  # type: ignore[union-attr]
+            timeout=10,
         )
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA journal_mode=WAL")
@@ -99,12 +127,10 @@ def init_db(app):
                 wert_nachher TEXT
             );
 
-            -- Migrations-Versionstabelle
             CREATE TABLE IF NOT EXISTS schema_version (
                 version INTEGER PRIMARY KEY
             );
 
-            -- Indizes für Abfrage-Performance
             CREATE INDEX IF NOT EXISTS idx_einsaetze_datum
                 ON einsaetze(datum);
             CREATE INDEX IF NOT EXISTS idx_historie_zeitstempel
@@ -121,26 +147,30 @@ def init_db(app):
             # Migration 1: halbtag-Spalte in feiertage einführen
             try:
                 db.execute("ALTER TABLE feiertage ADD COLUMN halbtag INTEGER DEFAULT 0")
-                db.execute("UPDATE feiertage SET halbtag=1 WHERE bezeichnung IN ('Heiligabend', 'Silvester')")
+                db.execute(
+                    "UPDATE feiertage SET halbtag=1 "
+                    "WHERE bezeichnung IN ('Heiligabend', 'Silvester')"
+                )
             except sqlite3.OperationalError:
                 pass  # Spalte existiert bereits (frische DB hat sie schon)
             db.execute("INSERT OR IGNORE INTO schema_version VALUES (1)")
 
-        # Seed Feiertage if empty
+        # ─── Seed Feiertage ───────────────────────────────────────────────────
         count = db.execute("SELECT COUNT(*) FROM feiertage").fetchone()[0]
         if count == 0:
-            from datetime import date
+            from datetime import date  # noqa: PLC0415
             year = date.today().year
             for y in [year, year + 1]:
                 for datum, name in get_hamburg_holidays(y):
-                    halbtag = 1 if name in ['Heiligabend', 'Silvester'] else 0
+                    halbtag = 1 if name in ('Heiligabend', 'Silvester') else 0
                     try:
                         db.execute(
-                            "INSERT OR IGNORE INTO feiertage (datum, bezeichnung, automatisch, halbtag) VALUES (?, ?, 1, ?)",
-                            (datum.isoformat(), name, halbtag)
+                            "INSERT OR IGNORE INTO feiertage "
+                            "(datum, bezeichnung, automatisch, halbtag) VALUES (?, ?, 1, ?)",
+                            (datum.isoformat(), name, halbtag),
                         )
-                    except Exception:
-                        pass
+                    except sqlite3.Error:
+                        pass  # Duplikat oder Constraint-Verletzung – ignorieren
 
         db.commit()
         db.close()

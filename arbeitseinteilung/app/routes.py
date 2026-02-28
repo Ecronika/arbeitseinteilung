@@ -1,14 +1,23 @@
-from flask import Blueprint, jsonify, request, render_template, current_app, Response
-from datetime import date, datetime
+"""HTTP-Routen und API-Endpunkte für Arbeitseinteilung."""
+
 import csv
 import io
-import json
+import sqlite3
+from datetime import date, datetime
+
+from flask import Blueprint, Response, jsonify, render_template, request
+
 from .database import get_db
-from .helpers import SONDERTAG_FARBEN, GRUPPEN_REIHENFOLGE, GRUPPEN_FARBEN, get_hamburg_holidays
+from .helpers import (
+    GRUPPEN_FARBEN,
+    GRUPPEN_REIHENFOLGE,
+    SONDERTAG_FARBEN,
+    get_hamburg_holidays,
+)
 
 bp = Blueprint('main', __name__)
 
-# ─── Validierungskonstanten ─────────────────────────────────────────────────────
+# ─── Validierungskonstanten ──────────────────────────────────────────────────
 
 MAX_INHALT_LEN = 500
 MAX_BEZEICHNUNG_LEN = 200
@@ -17,43 +26,60 @@ MAX_KENNZEICHEN_LEN = 20
 
 
 def get_client_ip() -> str:
+    """Gib die IP-Adresse des anfragenden Clients zurück.
+
+    Returns:
+        IP-Adresse als String (z. B. '192.168.1.42').
+    """
     return request.remote_addr
 
 
-# ─── SEITEN ────────────────────────────────────────────────────────────────────
+# ─── SEITEN ──────────────────────────────────────────────────────────────────
 
 @bp.route('/')
 def index():
-    return render_template('index.html',
-                           sondertag_farben=SONDERTAG_FARBEN,
-                           gruppen_farben=GRUPPEN_FARBEN,
-                           gruppen_reihenfolge=GRUPPEN_REIHENFOLGE)
+    """Rendere die Kalender-Hauptseite."""
+    return render_template(
+        'index.html',
+        sondertag_farben=SONDERTAG_FARBEN,
+        gruppen_farben=GRUPPEN_FARBEN,
+        gruppen_reihenfolge=GRUPPEN_REIHENFOLGE,
+    )
 
 
 @bp.route('/mitarbeiter-verwaltung')
 def mitarbeiter_seite():
+    """Rendere die Mitarbeiterverwaltungsseite."""
     return render_template('mitarbeiter.html', gruppen=GRUPPEN_REIHENFOLGE, gruppen_farben=GRUPPEN_FARBEN)
 
 
 @bp.route('/fahrzeuge-verwaltung')
 def fahrzeuge_seite():
+    """Rendere die Fahrzeugverwaltungsseite."""
     return render_template('fahrzeuge.html')
 
 
 @bp.route('/feiertage-verwaltung')
 def feiertage_seite():
+    """Rendere die Feiertagsverwaltungsseite."""
     return render_template('feiertage.html')
 
 
 @bp.route('/historie')
 def historie_seite():
+    """Rendere die Änderungshistorie-Seite."""
     return render_template('historie.html')
 
 
-# ─── IP / NUTZER ────────────────────────────────────────────────────────────────
+# ─── IP / NUTZER ──────────────────────────────────────────────────────────────
 
 @bp.route('/api/mein-nutzer')
 def mein_nutzer():
+    """Gib den Mitarbeiter zurück, der dieser IP-Adresse zugeordnet ist.
+
+    Returns:
+        JSON mit ``mitarbeiter_id``, ``name`` und ``ip``.
+    """
     ip = get_client_ip()
     db = get_db()
     row = db.execute(
@@ -72,6 +98,11 @@ def mein_nutzer():
 
 @bp.route('/api/ip-nutzer', methods=['POST'])
 def set_ip_nutzer():
+    """Ordne die aktuelle IP-Adresse einem Mitarbeiter zu.
+
+    Returns:
+        JSON mit ``ok: true`` bei Erfolg oder Fehlermeldung.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -91,10 +122,15 @@ def set_ip_nutzer():
     return jsonify({"ok": True})
 
 
-# ─── MITARBEITER ────────────────────────────────────────────────────────────────
+# ─── MITARBEITER ──────────────────────────────────────────────────────────────
 
 @bp.route('/api/mitarbeiter')
 def get_mitarbeiter():
+    """Gib alle aktiven Mitarbeiter gruppiert und als Flachliste zurück.
+
+    Returns:
+        JSON mit ``gruppen`` (nach Gruppe) und ``alle`` (Flachliste).
+    """
     db = get_db()
     rows = db.execute("""
         SELECT m.*, f.kennzeichen, f.baujahr, f.kraftstoff,
@@ -107,22 +143,27 @@ def get_mitarbeiter():
         ORDER BY m.gruppe, m.sort_order, m.name
     """).fetchall()
 
-    gruppen = {}
-    for g in GRUPPEN_REIHENFOLGE:
-        gruppen[g] = []
+    gruppen: dict = {}
+    for gruppe in GRUPPEN_REIHENFOLGE:
+        gruppen[gruppe] = []
 
     for r in rows:
         d = dict(r)
-        g = d.get('gruppe', 'KD')
-        if g not in gruppen:
-            gruppen[g] = []
-        gruppen[g].append(d)
+        gruppe = d.get('gruppe', 'KD')
+        if gruppe not in gruppen:
+            gruppen[gruppe] = []
+        gruppen[gruppe].append(d)
 
     return jsonify({"gruppen": gruppen, "alle": [dict(r) for r in rows]})
 
 
 @bp.route('/api/mitarbeiter', methods=['POST'])
 def create_mitarbeiter():
+    """Lege einen neuen Mitarbeiter an.
+
+    Returns:
+        JSON mit ``id`` des neu angelegten Mitarbeiters und ``ok: true``.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -150,6 +191,14 @@ def create_mitarbeiter():
 
 @bp.route('/api/mitarbeiter/<int:mid>', methods=['PUT'])
 def update_mitarbeiter(mid: int):
+    """Aktualisiere einen bestehenden Mitarbeiterdatensatz.
+
+    Args:
+        mid: Datenbank-ID des zu aktualisierenden Mitarbeiters.
+
+    Returns:
+        JSON mit ``ok: true`` bei Erfolg.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -179,6 +228,11 @@ def update_mitarbeiter(mid: int):
 
 @bp.route('/api/mitarbeiter/reorder', methods=['PUT'])
 def reorder_mitarbeiter():
+    """Aktualisiere die Sortierreihenfolge mehrerer Mitarbeiter.
+
+    Returns:
+        JSON mit ``ok: true`` bei Erfolg oder Fehlermeldung.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -186,25 +240,41 @@ def reorder_mitarbeiter():
     try:
         db = get_db()
         for item in orders:
-            db.execute("UPDATE mitarbeiter SET sort_order = ? WHERE id = ?", (item.get('sort_order'), item.get('id')))
+            db.execute(
+                "UPDATE mitarbeiter SET sort_order = ? WHERE id = ?",
+                (item.get('sort_order'), item.get('id'))
+            )
         db.commit()
         return jsonify({"ok": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    except sqlite3.Error as exc:
+        return jsonify({"error": str(exc)}), 400
 
 
 @bp.route('/api/mitarbeiter/<int:mid>', methods=['DELETE'])
 def deactivate_mitarbeiter(mid: int):
+    """Deaktiviere einen Mitarbeiter (Soft-Delete).
+
+    Args:
+        mid: Datenbank-ID des zu deaktivierenden Mitarbeiters.
+
+    Returns:
+        JSON mit ``ok: true``.
+    """
     db = get_db()
     db.execute("UPDATE mitarbeiter SET aktiv=0 WHERE id=?", (mid,))
     db.commit()
     return jsonify({"ok": True})
 
 
-# ─── FAHRZEUGE ──────────────────────────────────────────────────────────────────
+# ─── FAHRZEUGE ────────────────────────────────────────────────────────────────
 
 @bp.route('/api/fahrzeuge')
 def get_fahrzeuge():
+    """Gib alle aktiven Fahrzeuge mit zugeordnetem Mitarbeiter zurück.
+
+    Returns:
+        JSON-Array mit allen aktiven Fahrzeugen.
+    """
     db = get_db()
     rows = db.execute("""
         SELECT f.*, m.name as mitarbeiter_name
@@ -218,6 +288,11 @@ def get_fahrzeuge():
 
 @bp.route('/api/fahrzeuge', methods=['POST'])
 def create_fahrzeug():
+    """Lege ein neues Fahrzeug an.
+
+    Returns:
+        JSON mit ``id`` des neu angelegten Fahrzeugs und ``ok: true``.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -240,6 +315,14 @@ def create_fahrzeug():
 
 @bp.route('/api/fahrzeuge/<int:fid>', methods=['PUT'])
 def update_fahrzeug(fid: int):
+    """Aktualisiere ein bestehendes Fahrzeug.
+
+    Args:
+        fid: Datenbank-ID des zu aktualisierenden Fahrzeugs.
+
+    Returns:
+        JSON mit ``ok: true`` bei Erfolg.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -264,10 +347,19 @@ def update_fahrzeug(fid: int):
     return jsonify({"ok": True})
 
 
-# ─── EINSÄTZE ───────────────────────────────────────────────────────────────────
+# ─── EINSÄTZE ─────────────────────────────────────────────────────────────────
 
 @bp.route('/api/einsaetze')
 def get_einsaetze():
+    """Gib alle Einsätze im angefragten Datumsbereich zurück.
+
+    Query-Parameter:
+        von: Startdatum (YYYY-MM-DD).
+        bis: Enddatum (YYYY-MM-DD).
+
+    Returns:
+        JSON-Objekt mit Schlüsseln ``mitarbeiter_id_datum`` → ``inhalt``.
+    """
     von = request.args.get('von')
     bis = request.args.get('bis')
     db = get_db()
@@ -286,6 +378,14 @@ def get_einsaetze():
 
 @bp.route('/api/einsaetze', methods=['POST'])
 def save_einsatz():
+    """Speichere oder lösche einen Einsatz und schreibe einen Historik-Eintrag.
+
+    Ein leerer ``inhalt`` löscht den Einsatz. Alle Änderungen werden in der
+    ``aenderungshistorie``-Tabelle protokolliert.
+
+    Returns:
+        JSON mit ``ok: true`` bei Erfolg oder Fehlermeldung.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -316,7 +416,6 @@ def save_einsatz():
     else:
         db.execute("DELETE FROM einsaetze WHERE mitarbeiter_id=? AND datum=?", (mid, datum))
 
-    # Historik
     bearbeiter = str(data.get('bearbeiter_name', 'Unbekannt'))[:MAX_NAME_LEN]
     ma_row = db.execute("SELECT name FROM mitarbeiter WHERE id=?", (mid,)).fetchone()
     ma_name = ma_row['name'] if ma_row else str(mid)
@@ -331,10 +430,18 @@ def save_einsatz():
     return jsonify({"ok": True})
 
 
-# ─── FEIERTAGE ──────────────────────────────────────────────────────────────────
+# ─── FEIERTAGE ────────────────────────────────────────────────────────────────
 
 @bp.route('/api/feiertage')
 def get_feiertage():
+    """Gib alle Feiertage für ein Jahr zurück.
+
+    Query-Parameter:
+        year: Kalenderjahr (Standard: aktuelles Jahr).
+
+    Returns:
+        JSON-Array mit allen Feiertags-Datensätzen.
+    """
     year = request.args.get('year', date.today().year, type=int)
     db = get_db()
     rows = db.execute(
@@ -346,6 +453,11 @@ def get_feiertage():
 
 @bp.route('/api/feiertage', methods=['POST'])
 def add_feiertag():
+    """Füge einen neuen manuellen Feiertag hinzu.
+
+    Returns:
+        JSON mit ``ok: true`` bei Erfolg oder Fehlermeldung.
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type: application/json required"}), 415
     data = request.json or {}
@@ -354,7 +466,6 @@ def add_feiertag():
     bezeichnung = str(data['bezeichnung']).strip()
     if len(bezeichnung) > MAX_BEZEICHNUNG_LEN:
         return jsonify({"error": f"bezeichnung darf maximal {MAX_BEZEICHNUNG_LEN} Zeichen lang sein"}), 422
-    # Datumsformat validieren
     try:
         datetime.strptime(str(data['datum']), '%Y-%m-%d')
     except ValueError:
@@ -367,12 +478,20 @@ def add_feiertag():
         )
         db.commit()
         return jsonify({"ok": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    except sqlite3.IntegrityError as exc:
+        return jsonify({"error": str(exc)}), 400
 
 
 @bp.route('/api/feiertage/<int:fid>', methods=['DELETE'])
 def delete_feiertag(fid: int):
+    """Lösche einen Feiertag anhand seiner ID.
+
+    Args:
+        fid: Datenbank-ID des zu löschenden Feiertags.
+
+    Returns:
+        JSON mit ``ok: true``.
+    """
     db = get_db()
     db.execute("DELETE FROM feiertage WHERE id=?", (fid,))
     db.commit()
@@ -381,6 +500,11 @@ def delete_feiertag(fid: int):
 
 @bp.route('/api/feiertage/generieren', methods=['POST'])
 def generiere_feiertage():
+    """Generiere Hamburger Feiertage für ein Jahr und füge sie ein.
+
+    Returns:
+        JSON mit ``ok: true`` und ``count`` der verarbeiteten Einträge.
+    """
     data = request.json or {}
     year = data.get('year', date.today().year)
     db = get_db()
@@ -392,16 +516,28 @@ def generiere_feiertage():
                 (datum.isoformat(), name)
             )
             count += 1
-        except Exception:
-            pass
+        except sqlite3.Error:
+            pass  # Duplikat – ignorieren
     db.commit()
     return jsonify({"ok": True, "count": count})
 
 
-# ─── HISTORIE ────────────────────────────────────────────────────────────────────
+# ─── HISTORIE ─────────────────────────────────────────────────────────────────
 
 @bp.route('/api/historie')
 def get_historie():
+    """Gib gefilterte Einträge aus der Änderungshistorie zurück.
+
+    Query-Parameter:
+        limit: Maximale Anzahl Ergebnisse (Standard 200).
+        mitarbeiter_id: Filter nach Mitarbeiter-ID.
+        bearbeiter: Teilstring-Filter auf Bearbeitername (LIKE).
+        von: Startdatum der Änderung (YYYY-MM-DD).
+        bis: Enddatum der Änderung (YYYY-MM-DD).
+
+    Returns:
+        JSON-Array der Historik-Einträge, absteigend nach Zeitstempel.
+    """
     limit = request.args.get('limit', 200, type=int)
     mitarbeiter_id = request.args.get('mitarbeiter_id', type=int)
     bearbeiter = request.args.get('bearbeiter')
@@ -410,7 +546,7 @@ def get_historie():
     db = get_db()
 
     sql = "SELECT * FROM aenderungshistorie WHERE 1=1"
-    params = []
+    params: list = []
     if mitarbeiter_id:
         sql += " AND mitarbeiter_id=?"
         params.append(mitarbeiter_id)
@@ -431,11 +567,18 @@ def get_historie():
     return jsonify([dict(r) for r in rows])
 
 
-# ─── CSV-EXPORT ──────────────────────────────────────────────────────────────────
+# ─── CSV-EXPORT ───────────────────────────────────────────────────────────────
 
 @bp.route('/api/export/csv')
 def export_csv():
-    """Exportiert alle Einsätze des angegebenen Jahres als CSV-Datei."""
+    """Exportiere alle Einsätze eines Jahres als CSV-Datei.
+
+    Query-Parameter:
+        year: Kalenderjahr (Standard: aktuelles Jahr).
+
+    Returns:
+        CSV-Dateidownload mit Spalten Mitarbeiter, Gruppe, Datum, Inhalt.
+    """
     year = request.args.get('year', date.today().year, type=int)
     db = get_db()
 
@@ -460,12 +603,17 @@ def export_csv():
     )
 
 
-# ─── HEALTH ──────────────────────────────────────────────────────────────────────
+# ─── HEALTH ───────────────────────────────────────────────────────────────────
 
 @bp.route('/api/health')
 def health():
+    """Prüfe den Anwendungs- und Datenbankstatus.
+
+    Returns:
+        JSON mit ``status: ok`` oder ``status: error`` plus Details.
+    """
     try:
         get_db().execute("SELECT 1").fetchone()
         return jsonify({"status": "ok", "db": "connected"})
-    except Exception as e:
-        return jsonify({"status": "error", "detail": str(e)}), 500
+    except sqlite3.Error as exc:
+        return jsonify({"status": "error", "detail": str(exc)}), 500

@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 120
+# E402: eventlet monkey_patch() must be first — suppressed in __init__.py via noqa
+per-file-ignores =
+    app/__init__.py:E402
